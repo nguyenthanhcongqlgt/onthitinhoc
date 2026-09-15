@@ -135,6 +135,26 @@ export const authApi = {
   },
 };
 
+// 2FA APIS
+export const twoFactorApi = {
+  setup: async (): Promise<{ secret: string; qr_code: string; provisioning_uri: string }> => {
+    const res = await apiClient.post('/auth/2fa/setup/');
+    return res.data;
+  },
+  confirm: async (code: string): Promise<{ success: boolean; detail: string; backup_codes: string[]; user: User }> => {
+    const res = await apiClient.post('/auth/2fa/confirm/', { code });
+    return res.data;
+  },
+  disable: async (password: string): Promise<{ success: boolean; detail: string; user: User }> => {
+    const res = await apiClient.post('/auth/2fa/disable/', { password });
+    return res.data;
+  },
+  verifyLogin: async (tempToken: string, code: string): Promise<any> => {
+    const res = await apiClient.post('/auth/2fa/verify/', { temp_token: tempToken, code });
+    return res.data;
+  },
+};
+
 // EXAMS APIS
 export const examsApi = {
   getExams: async (params?: { folder_id?: number | string; include_subfolders?: boolean }): Promise<ExamInfo[]> => {

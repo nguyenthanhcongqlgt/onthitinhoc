@@ -1,3 +1,6 @@
+import jwt
+from datetime import datetime, timedelta
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
@@ -10,9 +13,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'full_name', 'role', 'status',
             'phone_number', 'school', 'class_name', 'student_id',
+            'is_two_factor_enabled',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'is_two_factor_enabled', 'created_at', 'updated_at']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -27,6 +31,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError({
                 "detail": "Tài khoản của bạn đã bị từ chối truy cập. Vui lòng liên hệ Admin."
             })
+
+        # Nếu tài khoản đã kích hoạt Bảo mật 2 lớp 2FA
+        if user.is_two_factor_enabled:
+            temp_payload = {
+                'user_id': user.id,
+                'username': user.username,
+                'purpose': '2fa_verification',
+                'exp': datetime.utcnow() + timedelta(minutes=5)
+            }
+            temp_token = jwt.encode(temp_payload, settings.SECRET_KEY, algorithm='HS256')
+            return {
+                'requires_2fa': True,
+                'temp_token': temp_token,
+                'username': user.username,
+                'full_name': user.full_name or user.username,
+            }
 
         data['user'] = UserSerializer(user).data
         return data

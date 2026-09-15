@@ -20,6 +20,11 @@ class User(AbstractUser):
     class_name = models.CharField(max_length=100, verbose_name='Lớp / Đội tuyển', blank=True)
     student_id = models.CharField(max_length=50, verbose_name='Mã học sinh / Số báo danh', blank=True)
 
+    # Bảo mật 2 lớp (2FA - TOTP Google Authenticator)
+    is_two_factor_enabled = models.BooleanField(default=False, verbose_name='Bật bảo mật 2 lớp (2FA)')
+    two_factor_secret = models.CharField(max_length=255, blank=True, default='', verbose_name='Mã bí mật 2FA')
+    two_factor_backup_codes = models.JSONField(default=list, blank=True, verbose_name='Mã khôi phục 2FA')
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

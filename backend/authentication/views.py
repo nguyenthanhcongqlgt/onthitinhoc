@@ -384,3 +384,201 @@ class ChangePasswordView(APIView):
         user.save()
 
         return Response({"detail": "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."})
+
+
+# ==========================================
+# 2FA (TWO-FACTOR AUTHENTICATION) APIS
+# ==========================================
+import io
+import base64
+import secrets
+import pyotp
+import qrcode
+import jwt
+from django.conf import settings
+from rest_framework_simplejwt.tokens import RefreshToken
+from core import crypto
+
+
+class TwoFactorSetupView(APIView):
+    """
+    Tạo Secret Key và sinh ảnh QR Code cho Google Authenticator.
+    POST /api/auth/2fa/setup/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        secret = pyotp.random_base32()
+
+        # Lưu tạm secret (mã hóa an toàn) vào tài khoản
+        user.two_factor_secret = crypto.encrypt_value(secret)
+        user.save(update_fields=['two_factor_secret'])
+
+        # Tạo URL dạng otpauth://
+        issuer = "THPT Quất Lâm"
+        provisioning_uri = pyotp.totp.TOTP(secret).provisioning_uri(
+            name=user.username,
+            issuer_name=issuer
+        )
+
+        # Sinh mã QR code dạng ảnh PNG base64
+        qr = qrcode.QRCode(version=1, box_size=8, border=2)
+        qr.add_data(provisioning_uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        qr_b64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+        return Response({
+            "secret": secret,
+            "qr_code": f"data:image/png;base64,{qr_b64}",
+            "provisioning_uri": provisioning_uri,
+        })
+
+
+class TwoFactorConfirmView(APIView):
+    """
+    Người dùng nhập mã 6 số từ app Google Authenticator để xác nhận và kích hoạt 2FA.
+    Tự động sinh 5 mã khôi phục dự phòng.
+    POST /api/auth/2fa/confirm/
+    Body: { "code": "123456" }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        code = str(request.data.get('code') or '').strip()
+
+        if not code or not user.two_factor_secret:
+            return Response(
+                {"detail": "Vui lòng nhập mã xác thực từ ứng dụng."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        secret = crypto.decrypt_value(user.two_factor_secret)
+        totp = pyotp.TOTP(secret)
+
+        if not totp.verify(code, valid_window=1):
+            return Response(
+                {"detail": "Mã xác thực không hợp lệ. Vui lòng kiểm tra lại đồng hồ điện thoại và nhập lại."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Sinh 5 mã khôi phục dự phòng ngẫu nhiên
+        backup_codes = [f"{secrets.token_hex(2).upper()}-{secrets.token_hex(2).upper()}" for _ in range(5)]
+
+        user.is_two_factor_enabled = True
+        user.two_factor_backup_codes = backup_codes
+        user.save(update_fields=['is_two_factor_enabled', 'two_factor_backup_codes'])
+
+        return Response({
+            "success": True,
+            "detail": "Kích hoạt Bảo mật 2 lớp thành công!",
+            "backup_codes": backup_codes,
+            "user": UserSerializer(user).data
+        })
+
+
+class TwoFactorDisableView(APIView):
+    """
+    Tắt Bảo mật 2 lớp (yêu cầu nhập đúng mật khẩu hiện tại để xác nhận).
+    POST /api/auth/2fa/disable/
+    Body: { "password": "..." }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        password = str(request.data.get('password') or '').strip()
+
+        if not password:
+            return Response(
+                {"detail": "Vui lòng nhập mật khẩu hiện tại để xác nhận tắt 2FA."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(password):
+            return Response(
+                {"detail": "Mật khẩu không chính xác."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.is_two_factor_enabled = False
+        user.two_factor_secret = ''
+        user.two_factor_backup_codes = []
+        user.save(update_fields=['is_two_factor_enabled', 'two_factor_secret', 'two_factor_backup_codes'])
+
+        return Response({
+            "success": True,
+            "detail": "Đã tắt Bảo mật 2 lớp thành công.",
+            "user": UserSerializer(user).data
+        })
+
+
+class TwoFactorVerifyLoginView(APIView):
+    """
+    Xác thực mã 6 số (hoặc mã dự phòng) trong quá trình Đăng nhập.
+    POST /api/auth/2fa/verify/
+    Body: { "temp_token": "...", "code": "..." }
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        temp_token = request.data.get('temp_token')
+        code = str(request.data.get('code') or '').strip().upper()
+
+        if not temp_token or not code:
+            return Response(
+                {"detail": "Vui lòng nhập đầy đủ mã xác thực."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            payload = jwt.decode(temp_token, settings.SECRET_KEY, algorithms=['HS256'])
+            if payload.get('purpose') != '2fa_verification':
+                raise ValueError("Invalid token purpose")
+            user_id = payload.get('user_id')
+            user = User.objects.get(id=user_id, is_active=True)
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, User.DoesNotExist, Exception):
+            return Response(
+                {"detail": "Phiên đăng nhập tạm thời đã hết hạn. Vui lòng đăng nhập lại từ đầu."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # 1. Thử xác thực với mã TOTP 6 số
+        secret = crypto.decrypt_value(user.two_factor_secret)
+        is_valid = False
+
+        if secret:
+            totp = pyotp.TOTP(secret)
+            is_valid = totp.verify(code, valid_window=1)
+
+        # 2. Nếu không đúng TOTP, kiểm tra xem có khớp mã khôi phục dự phòng không
+        used_backup = False
+        if not is_valid and user.two_factor_backup_codes:
+            clean_code = code.replace(" ", "")
+            if clean_code in user.two_factor_backup_codes:
+                is_valid = True
+                used_backup = True
+                # Đã dùng mã dự phòng thì xóa mã đó đi
+                user.two_factor_backup_codes.remove(clean_code)
+                user.save(update_fields=['two_factor_backup_codes'])
+
+        if not is_valid:
+            return Response(
+                {"detail": "Mã xác thực hoặc mã dự phòng không đúng. Vui lòng kiểm tra lại."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Cấp token JWT chính thức
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": UserSerializer(user).data,
+            "used_backup_code": used_backup,
+            "remaining_backup_codes": len(user.two_factor_backup_codes)
+        })

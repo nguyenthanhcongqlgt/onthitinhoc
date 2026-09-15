@@ -20,12 +20,14 @@ import { CreateCategoryModal } from '../components/bank/CreateCategoryModal';
 import { CreateBankQuestionModal } from '../components/bank/CreateBankQuestionModal';
 import { CreateFolderModal } from '../components/exam/CreateFolderModal';
 import { MoveExamModal } from '../components/exam/MoveExamModal';
+import { TwoFactorModal } from '../components/common/TwoFactorModal';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
   GraduationCap,
   Users,
   FileText,
   Shield,
+  ShieldCheck,
   Code2,
   CheckCircle,
   XCircle,
@@ -86,6 +88,7 @@ export const TeacherDashboard: React.FC = () => {
   const [assigningExam, setAssigningExam] = useState<ExamInfo | null>(null);
   const [sharingExam, setSharingExam] = useState<ExamInfo | null>(null);
   const [showAISettingsModal, setShowAISettingsModal] = useState<boolean>(false);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
   const [liveProctorExamId, setLiveProctorExamId] = useState<number | null>(null);
   const [analyticsExamId, setAnalyticsExamId] = useState<number | null>(null);
   const [showBulkImportModal, setShowBulkImportModal] = useState<boolean>(false);
@@ -334,6 +337,31 @@ export const TeacherDashboard: React.FC = () => {
             >
               <Bot className="h-4 w-4 text-indigo-400" />
               <span className="hidden sm:inline">Cài đặt AI</span>
+            </button>
+
+            <Link
+              to="/change-password"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+              title="Đổi mật khẩu tài khoản"
+            >
+              <KeyRound className="h-3.5 w-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Đổi mật khẩu</span>
+            </Link>
+
+            <button
+              onClick={() => setShowTwoFactorModal(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors relative"
+              title="Bảo mật 2 lớp qua Google Authenticator"
+            >
+              {user?.is_two_factor_enabled ? (
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              ) : (
+                <Shield className="h-3.5 w-3.5 text-slate-400" />
+              )}
+              <span className="hidden sm:inline">Bảo mật 2FA</span>
+              {user?.is_two_factor_enabled && (
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+              )}
             </button>
 
             <div className="hidden sm:block text-right">
@@ -2322,6 +2350,13 @@ export const TeacherDashboard: React.FC = () => {
       <AISettingsModal
         isOpen={showAISettingsModal}
         onClose={() => setShowAISettingsModal(false)}
+      />
+
+      {/* Two-Factor Authentication Modal */}
+      <TwoFactorModal
+        isOpen={showTwoFactorModal}
+        onClose={() => setShowTwoFactorModal(false)}
+        onSuccess={fetchData}
       />
 
       {/* Live Proctor Modal */}

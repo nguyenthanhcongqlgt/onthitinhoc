@@ -12,7 +12,11 @@ from .views import (
     UserPasswordResetView,
     UserDetailUpdateView,
     SystemStatsView,
-    ChangePasswordView
+    ChangePasswordView,
+    TwoFactorSetupView,
+    TwoFactorConfirmView,
+    TwoFactorDisableView,
+    TwoFactorVerifyLoginView,
 )
 
 urlpatterns = [
@@ -21,6 +25,10 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('profile/', UserProfileView.as_view(), name='user_profile'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
+    path('2fa/setup/', TwoFactorSetupView.as_view(), name='2fa_setup'),
+    path('2fa/confirm/', TwoFactorConfirmView.as_view(), name='2fa_confirm'),
+    path('2fa/disable/', TwoFactorDisableView.as_view(), name='2fa_disable'),
+    path('2fa/verify/', TwoFactorVerifyLoginView.as_view(), name='2fa_verify'),
     path('teachers/pending/', TeacherApprovalListView.as_view(), name='teacher_pending_list'),
     path('teachers/<int:user_id>/approve/', TeacherApproveView.as_view(), name='teacher_approve'),
     path('users/', UserManagementListView.as_view(), name='user_management_list'),

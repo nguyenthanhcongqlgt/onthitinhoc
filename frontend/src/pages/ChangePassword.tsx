@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { apiClient } from '../services/api';
+import { authApi } from '../services/api';
 import { Lock, Eye, EyeOff, ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
@@ -41,10 +41,7 @@ export const ChangePassword: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await apiClient.post('/auth/change-password', {
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
+      await authApi.changePassword(currentPassword, newPassword);
       setSuccess(true);
       setTimeout(() => {
         logout();

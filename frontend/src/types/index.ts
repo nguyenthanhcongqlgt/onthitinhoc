@@ -51,6 +51,7 @@ export interface User {
   school: string;
   class_name?: string;
   student_id?: string;
+  is_two_factor_enabled?: boolean;
   created_at: string;
 }
 

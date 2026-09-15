@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import { authApi } from '../services/api';
+import { authApi, twoFactorApi } from '../services/api';
+
+export interface LoginResult {
+  user?: User;
+  requires_2fa?: boolean;
+  temp_token?: string;
+  username?: string;
+  full_name?: string;
+}
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (credentials: any) => Promise<User>;
+  login: (credentials: any) => Promise<LoginResult>;
+  loginWith2FA: (tempToken: string, code: string) => Promise<User>;
   logout: () => void;
   refreshUserProfile: () => Promise<void>;
   isLoading: boolean;
@@ -42,8 +51,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (credentials: any): Promise<User> => {
+  const login = async (credentials: any): Promise<LoginResult> => {
     const data = await authApi.login(credentials);
+    if (data.requires_2fa) {
+      return {
+        requires_2fa: true,
+        temp_token: data.temp_token,
+        username: data.username,
+        full_name: data.full_name
+      };
+    }
+    localStorage.setItem('access_token', data.access);
+    localStorage.setItem('refresh_token', data.refresh);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    setToken(data.access);
+    setUser(data.user);
+    return { user: data.user };
+  };
+
+  const loginWith2FA = async (tempToken: string, code: string): Promise<User> => {
+    const data = await twoFactorApi.verifyLogin(tempToken, code);
     localStorage.setItem('access_token', data.access);
     localStorage.setItem('refresh_token', data.refresh);
     localStorage.setItem('user', JSON.stringify(data.user));
@@ -80,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         token,
         login,
+        loginWith2FA,
         logout,
         refreshUserProfile,
         isLoading,
