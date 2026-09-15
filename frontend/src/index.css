@@ -1,0 +1,800 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  code, pre, .font-mono {
+    font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    tab-size: 4;
+    -moz-tab-size: 4;
+  }
+  pre code {
+    white-space: pre !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+}
+
+/* Exam Mode Security - disable user text selection on exam items */
+.exam-secure-mode {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* KaTeX inline adjustment */
+.katex {
+  font-size: 1.08em;
+}
+
+/* ==========================================================================
+   LIGHT MODE TEAL / MINT THEME OVERRIDES (.light-teal)
+   Mặc định hệ thống là Dark Mode. Khi người dùng tắt Dark Mode, lớp .light-teal
+   sẽ được áp dụng vào <html> và chuyển toàn diện giao diện sang Light Mode Teal/Mint.
+   ========================================================================== */
+
+html.light-teal {
+  color-scheme: light;
+  background-color: #f4f9f7;
+  color: #1e293b;
+}
+
+/* Light Mode Scrollbar */
+html.light-teal ::-webkit-scrollbar-track {
+  background: #e6f7f4;
+}
+
+html.light-teal ::-webkit-scrollbar-thumb {
+  background: #99f6e4;
+  border-radius: 4px;
+}
+
+html.light-teal ::-webkit-scrollbar-thumb:hover {
+  background: #0d9488;
+}
+
+/* Base Page Background & Text */
+html.light-teal body {
+  background-color: #f4f9f7;
+  color: #1e293b;
+}
+
+/* Background Slate 900 -> Minty light background */
+html.light-teal .bg-slate-900,
+html.light-teal .bg-slate-900\/90,
+html.light-teal .bg-slate-900\/80,
+html.light-teal .bg-slate-900\/70,
+html.light-teal .bg-slate-900\/50 {
+  background-color: #f4f9f7 !important;
+  color: #1e293b;
+}
+
+/* Top Headers, Navbars & Floating Bars */
+html.light-teal header,
+html.light-teal .bg-slate-950,
+html.light-teal .bg-slate-950\/90,
+html.light-teal .bg-slate-950\/80,
+html.light-teal .bg-slate-950\/70,
+html.light-teal .bg-slate-950\/50 {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  border-color: #e2ede8 !important;
+  color: #1e293b;
+  box-shadow: 0 1px 3px 0 rgba(0, 138, 115, 0.04);
+}
+
+/* Cards, Panels & Modals -> Crisp White with Mint border */
+html.light-teal .bg-slate-800,
+html.light-teal .bg-slate-800\/90,
+html.light-teal .bg-slate-800\/80,
+html.light-teal .bg-slate-800\/70,
+html.light-teal .bg-slate-800\/60,
+html.light-teal .bg-slate-800\/50,
+html.light-teal .bg-slate-800\/40,
+html.light-teal .bg-slate-800\/30 {
+  background-color: #ffffff !important;
+  border-color: #e2ede8 !important;
+  color: #1e293b;
+  box-shadow: 0 1px 4px 0 rgba(0, 138, 115, 0.04);
+}
+
+/* Subtle Card Hover */
+html.light-teal .hover\:bg-slate-800\/80:hover,
+html.light-teal .hover\:bg-slate-800\/60:hover,
+html.light-teal .hover\:bg-slate-800:hover,
+html.light-teal .hover\:bg-slate-700\/50:hover,
+html.light-teal .hover\:bg-slate-700:hover {
+  background-color: #f0fdf9 !important;
+  border-color: #ccfbf1 !important;
+}
+
+/* Borders -> Light Mint/Slate border */
+html.light-teal .border-slate-800,
+html.light-teal .border-slate-700,
+html.light-teal .border-slate-700\/80,
+html.light-teal .border-slate-700\/60,
+html.light-teal .border-slate-700\/50,
+html.light-teal .border-slate-600 {
+  border-color: #e2ede8 !important;
+}
+
+/* Typography Overrides for Light Mode Teal */
+html.light-teal h1,
+html.light-teal h2,
+html.light-teal h3,
+html.light-teal h4 {
+  color: #0f2a24 !important;
+  font-weight: 700;
+}
+
+html.light-teal .text-white:not(button):not(button *):not([class*="bg-blue"]):not([class*="bg-indigo"]):not([class*="bg-teal"]):not([class*="bg-emerald"]):not([class*="bg-red"]):not([class*="bg-amber"]):not([class*="bg-gradient"]) {
+  color: #0f2a24 !important;
+}
+
+html.light-teal .text-slate-100,
+html.light-teal .text-slate-200,
+html.light-teal .text-slate-300 {
+  color: #0f172a !important; /* Đen than chì sắc nét 100% trên nền sáng */
+}
+
+html.light-teal .text-slate-400 {
+  color: #334155 !important; /* Xám đen rõ nét thay vì mờ nhạt */
+}
+
+html.light-teal .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* ==========================================================================
+   PAPER-SHARP CONTRAST FOR EXAM CREATOR & LIVE PREVIEW
+   Giải quyết dứt điểm vấn đề chữ mờ nhạt trên giao diện sáng
+   ========================================================================== */
+
+/* Thẻ câu hỏi & Toàn bộ văn bản đề thi */
+html.light-teal [id^="preview-q-"],
+html.light-teal .exam-preview-container,
+html.light-teal .exam-secure-mode {
+  color: #0f172a !important;
+}
+
+html.light-teal [id^="preview-q-"] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 4px 0 rgba(0, 138, 115, 0.08) !important;
+}
+
+html.light-teal [id^="preview-q-"]:hover {
+  border-color: #99f6e4 !important;
+}
+
+html.light-teal [id^="preview-q-"] .text-slate-200,
+html.light-teal [id^="preview-q-"] .text-slate-300,
+html.light-teal [id^="preview-q-"] .text-slate-400,
+html.light-teal [id^="preview-q-"] p,
+html.light-teal [id^="preview-q-"] .leading-relaxed {
+  color: #0f172a !important;
+  font-weight: 500;
+}
+
+/* Công thức toán LaTeX (KaTeX) & Ký hiệu */
+html.light-teal .katex,
+html.light-teal .katex-html,
+html.light-teal .katex * {
+  color: #0f172a !important;
+  font-weight: 600;
+}
+
+/* Tiêu đề phân mục: "PHẦN 1. TRẮC NGHIỆM", "PHẦN 2. ĐÚNG/SAI" */
+html.light-teal span.uppercase.text-slate-200,
+html.light-teal .uppercase.text-slate-200 {
+  color: #008a73 !important;
+  font-weight: 800 !important;
+}
+
+/* Banner Kiểm tra chất lượng đề thi */
+html.light-teal .bg-emerald-950\/30,
+html.light-teal .bg-emerald-950\/40 {
+  background-color: #d1fae5 !important;
+  border-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+
+html.light-teal .bg-emerald-950\/30 h4,
+html.light-teal .bg-emerald-950\/30 p,
+html.light-teal .bg-emerald-950\/30 span,
+html.light-teal .bg-emerald-950\/40 h4,
+html.light-teal .bg-emerald-950\/40 p,
+html.light-teal .bg-emerald-950\/40 span {
+  color: #065f46 !important;
+}
+
+html.light-teal .bg-emerald-950\/30 .bg-emerald-600\/30 {
+  background-color: #a7f3d0 !important;
+  border-color: #6ee7b7 !important;
+  color: #065f46 !important;
+}
+
+/* Phương án trắc nghiệm A, B, C, D (Azota Style) */
+/* 1. Phương án chưa chọn */
+html.light-teal button.border-slate-800.bg-slate-900\/60,
+html.light-teal div.border-slate-800.bg-slate-900\/60,
+html.light-teal .border-slate-800.bg-slate-900\/60 {
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 500;
+}
+
+html.light-teal button.border-slate-800.bg-slate-900\/60:hover {
+  background-color: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+}
+
+/* Huy hiệu A, B, C, D chưa chọn */
+html.light-teal button.border-slate-800.bg-slate-900\/60 span.bg-slate-800,
+html.light-teal .border-slate-800.bg-slate-900\/60 span.bg-slate-800 {
+  background-color: #e2ede8 !important;
+  color: #0f2a24 !important;
+  border-color: #cbd5e1 !important;
+  font-weight: 700;
+}
+
+/* 2. Phương án Đúng / Được chọn (Đáp án B trong ảnh) */
+html.light-teal button.border-blue-500.bg-blue-500\/15,
+html.light-teal div.border-emerald-500\/50.bg-emerald-500\/10,
+html.light-teal .border-blue-500.bg-blue-500\/15 {
+  background-color: #ecfdf5 !important;
+  border-color: #008a73 !important;
+  color: #064e3b !important;
+  font-weight: 600;
+  box-shadow: 0 2px 6px 0 rgba(0, 138, 115, 0.15) !important;
+}
+
+/* Huy hiệu của phương án đúng */
+html.light-teal button.border-blue-500.bg-blue-500\/15 span.bg-blue-600,
+html.light-teal div.border-emerald-500\/50.bg-emerald-500\/10 span.bg-emerald-600,
+html.light-teal .border-blue-500.bg-blue-500\/15 span.bg-blue-600 {
+  background-color: #008a73 !important;
+  color: #ffffff !important;
+  border-color: #008a73 !important;
+  font-weight: 700;
+}
+
+html.light-teal button.border-blue-500.bg-blue-500\/15 svg,
+html.light-teal .border-blue-500.bg-blue-500\/15 svg {
+  color: #008a73 !important;
+}
+
+/* Nút chia điểm & Ô nhập điểm */
+html.light-teal .border-blue-700\/60,
+html.light-teal .border-blue-500\/60 {
+  background-color: #f0fdf9 !important;
+  border-color: #99f6e4 !important;
+}
+
+html.light-teal .border-blue-700\/60 span,
+html.light-teal .border-blue-700\/60 input {
+  color: #008a73 !important;
+  font-weight: 700;
+}
+
+html.light-teal .bg-blue-600\/30 {
+  background-color: #e6f7f4 !important;
+  border-color: #99f6e4 !important;
+  color: #008a73 !important;
+  font-weight: 700 !important;
+}
+
+html.light-teal .bg-blue-600\/30:hover {
+  background-color: #ccfbf1 !important;
+  color: #0f766e !important;
+}
+
+/* ==========================================================================
+   HIGH-CONTRAST CODE VIEWER & SYNTAX HIGHLIGHTING (HTML, Python, C++, SQL, JS, Java)
+   ========================================================================== */
+
+/* Khung ngoài của CodeViewer */
+html.light-teal .border-slate-700\/80.bg-slate-950,
+html.light-teal div[class*="rounded-2xl"][class*="border-slate-700"] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Thanh Header của CodeViewer (chứa tab Python, C++, Song song) */
+html.light-teal .border-b.border-slate-800.bg-slate-900\/90 {
+  background-color: #f8fafc !important;
+  border-color: #e2ede8 !important;
+  color: #1e293b !important;
+}
+
+/* Tab ngôn ngữ không active */
+html.light-teal .bg-slate-800\/80.text-slate-400 {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+html.light-teal .bg-slate-800\/80.text-slate-400:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Tab ngôn ngữ đang active */
+html.light-teal .bg-blue-600.text-white {
+  background-color: #008a73 !important;
+  color: #ffffff !important;
+}
+html.light-teal .bg-indigo-600.text-white {
+  background-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* Cột số thứ tự dòng code (Line Numbers) */
+html.light-teal .border-r.border-slate-800,
+html.light-teal .border-r.border-slate-800\/80 {
+  border-color: #e2ede8 !important;
+  color: #64748b !important;
+  font-weight: 700;
+  background-color: #fafbfb !important;
+}
+
+/* Vùng chứa code */
+html.light-teal .divide-slate-800 > div,
+html.light-teal .divide-slate-800,
+html.light-teal .bg-slate-950 {
+  background-color: #ffffff !important;
+}
+
+/* Vùng phân cách giữa Python & C++ trong chế độ song song */
+html.light-teal .divide-slate-800 {
+  border-color: #e2ede8 !important;
+}
+
+/* Tiêu đề ngôn ngữ bên trong khung song song ("Python 3", "C++ (GCC)") */
+html.light-teal .text-slate-400.border-b.border-slate-900 {
+  border-color: #e2ede8 !important;
+  color: #0f766e !important;
+  font-weight: 800 !important;
+}
+
+/* TOÀN BỘ CÚ PHÁP CODE (SYNTAX HIGHLIGHTING) SẮC NÉT 100% TRÊN NỀN SÁNG */
+html.light-teal pre[class*="language-"],
+html.light-teal code[class*="language-"],
+html.light-teal code {
+  color: #0f172a !important; /* Mặc định chữ biến, hàm: Đen than chì */
+  font-weight: 500;
+}
+
+/* Từ khóa ngôn ngữ (def, class, return, if, for, in, while, using, namespace, int, void, struct, include...) */
+html.light-teal .token.keyword {
+  color: #7c3aed !important; /* Tím đậm cực nét */
+  font-weight: 800 !important;
+}
+
+/* Các toán tử (=, ==, !=, +, -, *, /, %, <, >, <=, >=, &&, ||, !) */
+html.light-teal .token.operator {
+  color: #008a73 !important; /* Xanh ngọc bích đậm */
+  font-weight: 700 !important;
+}
+
+/* Dấu câu & dấu ngoặc ((, ), [, ], {, }, ;, :, .) */
+html.light-teal .token.punctuation {
+  color: #1e293b !important; /* Đen xám đậm */
+  font-weight: 700 !important;
+}
+
+/* Tên hàm & phương thức (print, sum, cout, cin, len, range, push_back, main...) */
+html.light-teal .token.function,
+html.light-teal .token.class-name {
+  color: #1d4ed8 !important; /* Xanh dương hoàng gia đậm */
+  font-weight: 700 !important;
+}
+
+/* Chuỗi ký tự ("...", '...') */
+html.light-teal .token.string,
+html.light-teal .token.char {
+  color: #047857 !important; /* Xanh lá cây sẫm */
+  font-weight: 600 !important;
+}
+
+/* Số nguyên & số thực (0, 1, 2, 3.14...) */
+html.light-teal .token.number,
+html.light-teal .token.boolean {
+  color: #b45309 !important; /* Màu hổ phách/nâu cam sẫm */
+  font-weight: 700 !important;
+}
+
+/* Ghi chú comment (# ..., // ..., /* ... * /) */
+html.light-teal .token.comment {
+  color: #64748b !important; /* Xám ghi italic */
+  font-style: italic !important;
+  font-weight: 500;
+}
+
+/* Cú pháp tiền xử lý C++ (#include, #define, <iostream>, <vector>...) */
+html.light-teal .token.directive,
+html.light-teal .token.directive-hash,
+html.light-teal .token.macro {
+  color: #b91c1c !important; /* Đỏ đô */
+  font-weight: 800 !important;
+}
+html.light-teal .token.string_literal,
+html.light-teal .token.header {
+  color: #047857 !important;
+  font-weight: 700 !important;
+}
+
+/* Cú pháp HTML / Markup & SQL */
+html.light-teal .token.tag {
+  color: #0369a1 !important; /* Xanh đậm */
+  font-weight: 800 !important;
+}
+html.light-teal .token.attr-name {
+  color: #92400e !important; /* Nâu cam */
+  font-weight: 700 !important;
+}
+html.light-teal .token.attr-value {
+  color: #047857 !important;
+}
+html.light-teal .token.sql-keyword {
+  color: #7c3aed !important;
+  font-weight: 800 !important;
+}
+
+/* ==========================================================================
+   DARK MODE HIGH-CONTRAST CODE SYNTAX HIGHLIGHTING (Python, C++, SQL, HTML, CSS, JS)
+   Khắc phục triệt để lỗi các thành phần cú pháp bị trùng với màu nền đen/tối
+   ========================================================================== */
+html:not(.light-teal) pre[class*="language-"],
+html:not(.light-teal) code[class*="language-"],
+html.dark pre[class*="language-"],
+html.dark code[class*="language-"] {
+  color: #f1f5f9 !important; /* Trắng sáng rõ ràng */
+}
+
+/* Từ khóa: def, class, return, if, for, while, using, namespace, int, void, struct... */
+html:not(.light-teal) .token.keyword,
+html.dark .token.keyword {
+  color: #c084fc !important; /* Tím rực rỡ, độ tương phản cao */
+  font-weight: 700 !important;
+}
+
+/* Chuỗi ký tự & giá trị */
+html:not(.light-teal) .token.string,
+html:not(.light-teal) .token.char,
+html:not(.light-teal) .token.attr-value,
+html.dark .token.string,
+html.dark .token.char,
+html.dark .token.attr-value {
+  color: #34d399 !important; /* Xanh ngọc lục bảo tươi */
+  font-weight: 500 !important;
+}
+
+/* Tên hàm, phương thức & lớp */
+html:not(.light-teal) .token.function,
+html:not(.light-teal) .token.class-name,
+html.dark .token.function,
+html.dark .token.class-name {
+  color: #60a5fa !important; /* Xanh hoàng gia sáng */
+  font-weight: 600 !important;
+}
+
+/* Số & boolean */
+html:not(.light-teal) .token.number,
+html:not(.light-teal) .token.boolean,
+html.dark .token.number,
+html.dark .token.boolean {
+  color: #fb923c !important; /* Cam ấm nổi bật */
+  font-weight: 600 !important;
+}
+
+/* Toán tử (=, ==, !=, +, -, *, /, %, <, >, <=, >=, &&, ||...) */
+html:not(.light-teal) .token.operator,
+html.dark .token.operator {
+  color: #38bdf8 !important; /* Xanh da trời sáng */
+  font-weight: 700 !important;
+}
+
+/* Dấu câu & dấu ngoặc ((, ), [, ], {, }, ;, :, .) */
+html:not(.light-teal) .token.punctuation,
+html.dark .token.punctuation {
+  color: #cbd5e1 !important; /* Trắng xám sáng, không bị chìm vào nền */
+  font-weight: 500 !important;
+}
+
+/* Chú thích comment (# ..., // ..., block comment, -- ...) */
+html:not(.light-teal) .token.comment,
+html.dark .token.comment {
+  color: #94a3b8 !important; /* Xám bạc sáng rõ, độ tương phản cao, không trùng nền */
+  font-style: italic !important;
+  font-weight: 500 !important;
+}
+
+/* Tiền xử lý C++ (#include, #define...) */
+html:not(.light-teal) .token.macro,
+html:not(.light-teal) .token.directive,
+html:not(.light-teal) .token.directive-hash,
+html.dark .token.macro,
+html.dark .token.directive,
+html.dark .token.directive-hash {
+  color: #fb7185 !important; /* Đỏ hồng tươi sáng */
+  font-weight: 700 !important;
+}
+
+/* Hàm tích hợp sẵn (print, len, sum, range...) */
+html:not(.light-teal) .token.builtin,
+html.dark .token.builtin {
+  color: #38bdf8 !important; /* Xanh cyan tươi sáng */
+  font-weight: 600 !important;
+}
+
+/* Thẻ HTML / Markup */
+html:not(.light-teal) .token.tag,
+html.dark .token.tag {
+  color: #f43f5e !important; /* Đỏ tươi hoa hồng */
+  font-weight: 700 !important;
+}
+
+/* Thuộc tính & CSS properties */
+html:not(.light-teal) .token.attr-name,
+html:not(.light-teal) .token.property,
+html.dark .token.attr-name,
+html.dark .token.property {
+  color: #facc15 !important; /* Vàng hổ phách */
+  font-weight: 600 !important;
+}
+
+/* CSS Selectors */
+html:not(.light-teal) .token.selector,
+html.dark .token.selector {
+  color: #a855f7 !important; /* Tím phong cách */
+  font-weight: 700 !important;
+}
+
+/* Biến & hằng số */
+html:not(.light-teal) .token.variable,
+html.dark .token.variable {
+  color: #f1f5f9 !important;
+}
+html:not(.light-teal) .token.constant,
+html.dark .token.constant {
+  color: #fbbf24 !important;
+}
+
+/* Từ khóa SQL */
+html:not(.light-teal) .token.sql-keyword,
+html.dark .token.sql-keyword {
+  color: #c084fc !important;
+  font-weight: 700 !important;
+}
+
+/* ==========================================================================
+   NÚT "AI GIẢI CÂU NÀY" TRONG LIGHT MODE - NỔI BẬT & DỄ NHÌN 100%
+   ========================================================================== */
+html.light-teal .bg-indigo-950\/80,
+html.light-teal .bg-indigo-950\/70,
+html.light-teal .bg-indigo-950 {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%) !important;
+  border-color: #8b5cf6 !important;
+  color: #5b21b6 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 3px 0 rgba(139, 92, 246, 0.2) !important;
+}
+
+html.light-teal .bg-indigo-950\/80:hover {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%) !important;
+  border-color: #7c3aed !important;
+  color: #4c1d95 !important;
+  box-shadow: 0 2px 6px 0 rgba(139, 92, 246, 0.3) !important;
+}
+
+html.light-teal .bg-indigo-950\/80 span,
+html.light-teal .bg-indigo-950 span {
+  color: #5b21b6 !important;
+  font-weight: 700 !important;
+}
+
+html.light-teal .bg-indigo-950\/80 svg,
+html.light-teal .bg-indigo-950 svg {
+  color: #d97706 !important; /* Ngôi sao AI vàng cam rực rỡ */
+}
+
+/* Nút chọn điểm preset (0.25d, 0.4d, 0.5d, 0.75d, 1d) khi chưa chọn */
+html.light-teal button.bg-slate-900.text-slate-400.border-slate-800 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
+}
+html.light-teal button.bg-slate-900.text-slate-400.border-slate-800:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+
+
+/* Blue Accents -> Primary Teal (#008a73) */
+html.light-teal .text-blue-400,
+html.light-teal .text-blue-500 {
+  color: #008a73 !important;
+}
+
+html.light-teal .text-indigo-400,
+html.light-teal .text-indigo-300 {
+  color: #0f766e !important;
+}
+
+html.light-teal .bg-blue-600,
+html.light-teal .bg-blue-500 {
+  background-color: #008a73 !important;
+  color: #ffffff !important;
+}
+
+html.light-teal button.bg-blue-600:hover,
+html.light-teal .hover\:bg-blue-500:hover,
+html.light-teal .hover\:bg-blue-600:hover {
+  background-color: #0b7a67 !important;
+}
+
+/* Gradients from blue/indigo -> Teal/Mint gradient */
+html.light-teal .from-blue-600 {
+  --tw-gradient-from: #008a73 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(0 138 115 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), #0d9488 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+html.light-teal .to-indigo-600,
+html.light-teal .to-indigo-500 {
+  --tw-gradient-to: #0f766e var(--tw-gradient-to-position) !important;
+}
+
+html.light-teal .shadow-blue-500\/20,
+html.light-teal .shadow-blue-500\/30,
+html.light-teal .shadow-blue-600\/30 {
+  box-shadow: 0 10px 15px -3px rgba(0, 138, 115, 0.15), 0 4px 6px -4px rgba(0, 138, 115, 0.1) !important;
+}
+
+/* AI Settings Button / Secondary Buttons */
+html.light-teal .border-indigo-500\/40 {
+  border-color: #a7f3d0 !important;
+}
+
+html.light-teal .bg-indigo-950\/60,
+html.light-teal .bg-indigo-950\/50,
+html.light-teal .bg-indigo-950\/40 {
+  background-color: #e6f7f4 !important;
+}
+
+html.light-teal .text-indigo-300 {
+  color: #065f46 !important;
+}
+
+/* Form Inputs, Dropdowns & Textareas */
+html.light-teal input[type="text"],
+html.light-teal input[type="password"],
+html.light-teal input[type="email"],
+html.light-teal input[type="number"],
+html.light-teal select,
+html.light-teal textarea:not(.code-editor-textarea) {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* Transparent Code Editor Overlay Textarea */
+html.light-teal textarea.code-editor-textarea,
+textarea.code-editor-textarea {
+  background-color: transparent !important;
+  background: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  outline: none !important;
+}
+
+html.light-teal input::placeholder,
+html.light-teal textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+html.light-teal input:focus,
+html.light-teal select:focus,
+html.light-teal textarea:focus {
+  border-color: #008a73 !important;
+  --tw-ring-color: #008a73 !important;
+}
+
+/* Badges & Status Tags */
+html.light-teal .bg-blue-500\/10,
+html.light-teal .bg-blue-500\/20 {
+  background-color: #e6f7f4 !important;
+  color: #008a73 !important;
+  border-color: #99f6e4 !important;
+}
+
+html.light-teal .bg-emerald-500\/10,
+html.light-teal .bg-emerald-500\/20,
+html.light-teal .bg-green-500\/10,
+html.light-teal .bg-green-500\/20 {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0 !important;
+}
+
+/* Modal Backdrop Overlay stays translucent dark scrim */
+html.light-teal .fixed.inset-0.bg-slate-950\/80,
+html.light-teal .fixed.inset-0.bg-slate-950\/70,
+html.light-teal .fixed.inset-0.bg-slate-900\/80,
+html.light-teal .fixed.inset-0[class*="bg-slate-950"],
+html.light-teal .fixed.inset-0[class*="bg-black"] {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Modal Content Container */
+html.light-teal .fixed.inset-0 > div.bg-slate-900,
+html.light-teal .fixed.inset-0 > div[class*="bg-slate-900"],
+html.light-teal .fixed.inset-0 .relative[class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+  border-color: #e2ede8 !important;
+  color: #1e293b !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 138, 115, 0.2) !important;
+}
+
+/* Inner Mini Stats Cards & KPI Blocks */
+html.light-teal .bg-slate-950\/60,
+html.light-teal .bg-slate-950\/40,
+html.light-teal .bg-slate-900\/60,
+html.light-teal .bg-slate-900\/40 {
+  background-color: #f0fdf9 !important;
+  border-color: #ccfbf1 !important;
+}
+
+/* Table Headers & Rows */
+html.light-teal th {
+  background-color: #f0fdf9 !important;
+  color: #0f2a24 !important;
+  border-color: #e2ede8 !important;
+}
+
+html.light-teal td {
+  border-color: #e2ede8 !important;
+  color: #334155 !important;
+}
+
+html.light-teal tbody tr:hover td,
+html.light-teal tbody tr:hover {
+  background-color: #f4fbf8 !important;
+}
+
+/* Logout & Danger secondary buttons */
+html.light-teal .hover\:bg-red-500\/10:hover {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+}
