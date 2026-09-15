@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, GraduationCap, UserCheck, Lock, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { GraduationCap, Lock, AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const Login: React.FC = () => {
@@ -41,11 +41,6 @@ export const Login: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleQuickLogin = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
   };
 
   return (
@@ -101,7 +96,7 @@ export const Login: React.FC = () => {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="vd: admin, gv_tinhoc, hsg_nam"
+                placeholder="Nhập tên đăng nhập hoặc số báo danh"
                 className="w-full rounded-xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -132,50 +127,6 @@ export const Login: React.FC = () => {
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
-
-          {/* Quick Login for Testing */}
-          <div className="mt-8 pt-6 border-t border-slate-800">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 text-center">
-              ⚡ Đăng nhập nhanh tài khoản mẫu:
-            </div>
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin', 'admin123')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-left hover:border-blue-500/50 hover:bg-slate-800/80 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <Shield className="h-3.5 w-3.5 text-amber-400" />
-                  <span className="font-semibold text-slate-200">Super Admin (Thầy Công)</span>
-                </div>
-                <span className="font-mono text-[11px] text-slate-400">admin</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('gv_tinhoc', 'teacher123')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-left hover:border-blue-500/50 hover:bg-slate-800/80 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-3.5 w-3.5 text-blue-400" />
-                  <span className="font-semibold text-slate-200">Giáo viên (Cô Mai)</span>
-                </div>
-                <span className="font-mono text-[11px] text-slate-400">gv_tinhoc</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('hsg_nam', 'student123')}
-                className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 text-left hover:border-blue-500/50 hover:bg-slate-800/80 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="font-semibold text-slate-200">Học sinh HSG (Trần Hải Nam)</span>
-                </div>
-                <span className="font-mono text-[11px] text-slate-400">hsg_nam</span>
-              </button>
-            </div>
-          </div>
 
           <div className="mt-6 text-center text-xs text-slate-400">
             Chưa có tài khoản?{' '}
