@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authApi } from '../services/api';
 import { 
+  Home,
   Lock, 
   Eye, 
   EyeOff, 
@@ -152,13 +153,27 @@ export const ChangePassword: React.FC = () => {
       <div className="w-full max-w-xl bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10">
         {/* Header navigation */}
         <div className="flex items-center justify-between pb-6 border-b border-slate-800">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home size={15} />
+              <span className="hidden sm:inline">Trang Chủ</span>
+            </Link>
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate(user?.role === 'STUDENT' ? '/dashboard' : '/teacher');
+                }
+              }}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               title="Quay lại"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2">

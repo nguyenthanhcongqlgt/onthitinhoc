@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
+  Home,
   Code2,
   ArrowLeft,
   Play,
@@ -216,10 +217,26 @@ export const CodePlayground: React.FC = () => {
       <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 py-3">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home className="h-4 w-4" />
+              <span>Trang Chủ</span>
+            </Link>
+
             <button
               type="button"
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate(user?.role === 'STUDENT' ? '/dashboard' : '/teacher');
+                }
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+              title="Quay lại"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Quay lại</span>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { GraduationCap, Lock, AlertCircle, ArrowRight, Sparkles, ShieldCheck, KeyRound, ArrowLeft } from 'lucide-react';
+import { Home, GraduationCap, Lock, AlertCircle, ArrowRight, Sparkles, ShieldCheck, KeyRound, ArrowLeft } from 'lucide-react';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const Login: React.FC = () => {
@@ -85,7 +85,17 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Theme Toggle Button at Top Right */}
+      {/* Top Bar Actions */}
+      <div className="absolute top-4 left-4 z-30">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-950/70 px-3.5 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+          title="Về Trang Chủ hệ thống"
+        >
+          <Home className="h-4 w-4" />
+          <span>Trang Chủ</span>
+        </Link>
+      </div>
       <div className="absolute top-4 right-4 z-30">
         <ThemeToggle />
       </div>

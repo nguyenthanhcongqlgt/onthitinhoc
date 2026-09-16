@@ -30,59 +30,12 @@ def seed():
     else:
         print("[i] Tai khoan Super Admin da ton tai.")
 
-    # 2. Tạo Giáo viên bộ môn
-    teacher_user, created = User.objects.get_or_create(
-        username='gv_tinhoc',
-        defaults={
-            'email': 'gv_tinhoc@quatlam.edu.vn',
-            'full_name': 'Cô Nguyễn Thị Mai',
-            'role': User.Role.TEACHER,
-            'status': User.Status.ACTIVE,
-            'school': 'THPT Quất Lâm',
-            'is_staff': True,
-        }
-    )
-    if created:
-        teacher_user.set_password('teacher123')
-        teacher_user.save()
-        print("[+] Da tao tai khoan Giao vien: gv_tinhoc / teacher123")
+    # 2. Đảm bảo chỉ duy nhất tài khoản Super Admin tồn tại, tự động xóa sạch tài khoản mẫu
+    deleted_count, _ = User.objects.filter(username__in=['gv_tinhoc', 'hsg_nam', 'hsg_linh']).delete()
+    if deleted_count > 0:
+        print(f"[-] Đã xóa {deleted_count} tài khoản mẫu cũ (gv_tinhoc, hsg_nam, hsg_linh), chỉ giữ duy nhất admin.")
 
-    # 3. Tạo Học sinh Đội tuyển HSG
-    student_user, created = User.objects.get_or_create(
-        username='hsg_nam',
-        defaults={
-            'email': 'nam@quatlam.edu.vn',
-            'full_name': 'Tran Hai Nam',
-            'role': User.Role.STUDENT,
-            'status': User.Status.ACTIVE,
-            'school': 'THPT Quat Lam',
-            'class_name': '12A1 - Doi tuyen HSG Tin',
-            'student_id': 'QL-2025-01'
-        }
-    )
-    if created:
-        student_user.set_password('student123')
-        student_user.save()
-        print("[+] Da tao tai khoan Hoc sinh: hsg_nam / student123")
-
-    student2_user, created = User.objects.get_or_create(
-        username='hsg_linh',
-        defaults={
-            'email': 'linh@quatlam.edu.vn',
-            'full_name': 'Le Thuy Linh',
-            'role': User.Role.STUDENT,
-            'status': User.Status.ACTIVE,
-            'school': 'THPT Quat Lam',
-            'class_name': '12A1 - Doi tuyen HSG Tin',
-            'student_id': 'QL-2025-02'
-        }
-    )
-    if created:
-        student2_user.set_password('student123')
-        student2_user.save()
-        print("[+] Da tao tai khoan Hoc sinh: hsg_linh / student123")
-
-    # 4. Tạo Đề thi Chuẩn HSG Tin học THPT Quất Lâm
+    # 3. Tạo Đề thi Chuẩn HSG Tin học THPT Quất Lâm (thuộc quyền sở hữu của admin)
     exam_title = "DE KHAO SAT CHON DOI TUYEN HSG TIN HOC 2025 - THPT QUAT LAM"
     exam, created = Exam.objects.get_or_create(
         title=exam_title,

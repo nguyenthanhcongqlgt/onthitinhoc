@@ -24,16 +24,22 @@ export const Forbidden: React.FC = () => {
         <p className="text-slate-400 mb-8">
           Bạn không có quyền truy cập trang này. Nếu bạn cho rằng đây là lỗi, vui lòng liên hệ quản trị viên.
         </p>
-        <div className="flex gap-3 justify-center">
+        <div className="flex gap-3 justify-center flex-wrap">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate(user ? dashboardPath : '/');
+              }
+            }}
             className="flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-medium transition-all"
           >
             <ArrowLeft size={18} />
             Quay lại
           </button>
           <button
-            onClick={() => navigate(user ? dashboardPath : '/login')}
+            onClick={() => navigate('/')}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all"
           >
             <Home size={18} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { examsApi, aiApi, foldersApi } from '../services/api';
 import { ExamFolder } from '../types';
 import { CodeViewer } from '../components/exam/CodeViewer';
@@ -13,6 +14,7 @@ import {
 import { BankQuestionPickerModal } from '../components/bank/BankQuestionPickerModal';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
+  Home,
   FileText,
   Upload,
   Download,
@@ -540,6 +542,7 @@ export const validateQuestionsClient = (questionsList: any[]): ValidationSummary
 };
 
 export const ExamCreator: React.FC = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
@@ -1881,12 +1884,24 @@ export const ExamCreator: React.FC = () => {
       <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md shrink-0 px-4 sm:px-6 py-2.5 z-40">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="flex h-9 items-center gap-1.5 px-3 rounded-xl bg-blue-950/60 border border-blue-500/40 text-blue-300 hover:bg-blue-600 hover:text-white transition-all text-xs font-bold shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Trang Chủ</span>
+            </Link>
             <button
-              onClick={() => navigate('/teacher')}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              onClick={() => {
+                const target = user?.role === 'STUDENT' ? '/dashboard' : '/teacher';
+                navigate(target);
+              }}
+              className="flex h-9 items-center gap-1.5 px-2.5 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors text-xs font-medium"
               title="Quay lại Dashboard"
             >
               <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
             </button>
             <div>
               <h1 className="font-bold text-sm sm:text-base text-white flex items-center gap-2">

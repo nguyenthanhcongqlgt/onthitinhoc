@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { assessmentApi } from '../services/api';
 import { ExamSessionDetail } from '../types';
 import { MathFormula } from '../components/exam/MathFormula';
 import { QuestionDisputeModal } from '../components/exam/QuestionDisputeModal';
 import {
+  Home,
   Award,
   CheckCircle2,
   XCircle,
@@ -27,6 +29,7 @@ import {
 } from 'recharts';
 
 export const ExamResult: React.FC = () => {
+  const { user } = useAuth();
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
@@ -88,14 +91,24 @@ export const ExamResult: React.FC = () => {
     <div className="min-h-screen bg-slate-900 text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Top Action */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Về Bảng Điều Khiển
-          </button>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link
+              to="/"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 px-4 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home className="h-4 w-4" />
+              Trang Chủ
+            </Link>
+            <button
+              onClick={() => navigate(user?.role === 'STUDENT' ? '/dashboard' : '/teacher')}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Về Bảng Điều Khiển
+            </button>
+          </div>
           <span className="text-xs font-semibold text-slate-400">
             Mã phiên thi: #{session.id} • Thí sinh: {session.student_name}
           </span>
@@ -371,6 +384,25 @@ export const ExamResult: React.FC = () => {
             sessionId={session.id}
           />
         )}
+
+        {/* Bottom Navigation Actions */}
+        <div className="pt-6 border-t border-slate-800/80 flex items-center justify-center gap-3">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 rounded-xl border border-blue-500/40 bg-blue-950/60 px-5 py-2.5 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+            title="Về Trang Chủ hệ thống"
+          >
+            <Home className="h-4 w-4" />
+            Về Trang Chủ
+          </Link>
+          <button
+            onClick={() => navigate(user?.role === 'STUDENT' ? '/dashboard' : '/teacher')}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-5 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Về Bảng Điều Khiển
+          </button>
+        </div>
       </div>
     </div>
   );

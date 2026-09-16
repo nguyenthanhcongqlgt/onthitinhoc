@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { assessmentApi, examsApi } from '../services/api';
 import { ExamStartPayload, QuestionMasked } from '../types';
@@ -12,6 +12,7 @@ import { ExamWatermark } from '../components/exam/ExamWatermark';
 import { QuestionDisputeModal } from '../components/exam/QuestionDisputeModal';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
+  Home,
   Shield,
   Clock,
   Send,
@@ -43,6 +44,7 @@ export const ExamRoom: React.FC = () => {
 
   const [payload, setPayload] = useState<ExamStartPayload | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
 
@@ -175,8 +177,7 @@ export const ExamRoom: React.FC = () => {
             : err.message === 'Network Error'
             ? 'Máy chủ Backend (Render) đang khởi động hoặc mất kết nối mạng. Vui lòng đợi giây lát rồi thử lại!'
             : 'Không thể tải đề thi.');
-        alert(errorDetail);
-        navigate(isPreviewParam ? '/teacher' : '/dashboard');
+        setLoadError(errorDetail);
       } finally {
         setIsLoading(false);
       }
@@ -603,6 +604,46 @@ export const ExamRoom: React.FC = () => {
     }
   };
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl border border-red-500/40 bg-slate-950 p-6 sm:p-8 shadow-2xl text-center space-y-5">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400">
+            <AlertTriangle className="h-7 w-7" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-white">Không Thể Mở Đề Thi</h3>
+            <p className="text-xs text-slate-300 leading-relaxed">{loadError}</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
+            <Link
+              to="/"
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 px-4 py-2.5 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home className="h-4 w-4" />
+              Trang Chủ
+            </Link>
+            <button
+              type="button"
+              onClick={() => navigate(isPreviewParam ? '/teacher' : user?.role === 'STUDENT' ? '/dashboard' : '/teacher')}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+            >
+              Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-500 transition-colors shadow-sm"
+            >
+              Thử Lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || !payload) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-300">
@@ -649,13 +690,32 @@ export const ExamRoom: React.FC = () => {
             </ul>
           </div>
 
-          <button
-            onClick={handleStartExamClick}
-            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 px-6 font-bold text-sm text-white shadow-xl shadow-blue-600/30 hover:from-blue-500 hover:to-indigo-500 transition-all"
-          >
-            <Maximize className="h-4 w-4" />
-            Bắt Đầu Làm Bài Thi Ngay
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Link
+                to="/"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-2xl border border-blue-500/40 bg-blue-950/60 py-3.5 px-4 font-bold text-xs text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                title="Về Trang Chủ hệ thống"
+              >
+                <Home className="h-4 w-4" />
+                Trang Chủ
+              </Link>
+              <button
+                type="button"
+                onClick={() => navigate(isPreviewParam ? '/teacher' : user?.role === 'STUDENT' ? '/dashboard' : '/teacher')}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-2xl border border-slate-800 bg-slate-900 py-3.5 px-4 font-semibold text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition-all"
+              >
+                Dashboard
+              </button>
+            </div>
+            <button
+              onClick={handleStartExamClick}
+              className="w-full sm:flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 py-4 px-6 font-bold text-sm text-white shadow-xl shadow-blue-600/30 hover:from-blue-500 hover:to-indigo-500 transition-all"
+            >
+              <Maximize className="h-4 w-4" />
+              Bắt Đầu Làm Bài Thi Ngay
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -807,7 +867,15 @@ export const ExamRoom: React.FC = () => {
               </div>
             )}
 
-            {/* Exit Preview */}
+            {/* Exit Preview & Home Links */}
+            <Link
+              to="/"
+              className="flex items-center gap-1 rounded-xl bg-blue-600/60 hover:bg-blue-600 px-3 py-1.5 font-bold text-white transition-all shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home className="h-3.5 w-3.5" />
+              <span>Trang Chủ</span>
+            </Link>
             <button
               type="button"
               onClick={() => {

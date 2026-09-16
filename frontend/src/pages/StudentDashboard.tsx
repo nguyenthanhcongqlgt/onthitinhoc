@@ -5,6 +5,7 @@ import { examsApi, assessmentApi } from '../services/api';
 import { ExamInfo, ExamSessionDetail, StudentAnalyticsData } from '../types';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
+  Home,
   GraduationCap,
   Clock,
   Shield,
@@ -128,16 +129,31 @@ export const StudentDashboard: React.FC = () => {
       <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-md shadow-blue-500/20">
-              <GraduationCap className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-sm sm:text-base text-white">WEB APP ÔN THI TRẮC NGHIỆM MÔN TIN HỌC</h1>
-              <p className="text-[10px] sm:text-xs font-semibold text-blue-400">TRƯỜNG THPT QUẤT LÂM - NINH BÌNH</p>
-            </div>
+            <Link
+              to="/"
+              className="flex items-center gap-3 group hover:opacity-90 transition-opacity"
+              title="Về Trang Chủ"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                <GraduationCap className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="font-bold text-sm sm:text-base text-white group-hover:text-blue-300 transition-colors">WEB APP ÔN THI TRẮC NGHIỆM MÔN TIN HỌC</h1>
+                <p className="text-[10px] sm:text-xs font-semibold text-blue-400">TRƯỜNG THPT QUẤT LÂM - NINH BÌNH</p>
+              </div>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              title="Về Trang Chủ hệ thống"
+            >
+              <Home className="h-4 w-4" />
+              <span className="hidden sm:inline">Trang Chủ</span>
+            </Link>
+
             <Link
               to="/playground"
               className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/60 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/60 hover:text-white transition-all shadow-sm"
