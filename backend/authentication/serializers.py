@@ -18,6 +18,14 @@ class UserSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'status', 'is_two_factor_enabled', 'created_at', 'updated_at']
 
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        if request and not (request.user.is_superuser or request.user.role == User.Role.ADMIN):
+            validated_data.pop('role', None)
+            validated_data.pop('status', None)
+            validated_data.pop('username', None)
+        return super().update(instance, validated_data)
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)

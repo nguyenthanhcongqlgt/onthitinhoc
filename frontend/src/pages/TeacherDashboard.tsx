@@ -342,10 +342,10 @@ export const TeacherDashboard: React.FC = () => {
             <Link
               to="/change-password"
               className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-              title="Đổi mật khẩu tài khoản"
+              title="Cài đặt thông tin tài khoản (Họ tên, Mật khẩu)"
             >
-              <KeyRound className="h-3.5 w-3.5 text-amber-400" />
-              <span className="hidden sm:inline">Đổi mật khẩu</span>
+              <UserCheck className="h-3.5 w-3.5 text-blue-400" />
+              <span className="hidden sm:inline">Tài khoản</span>
             </Link>
 
             <button

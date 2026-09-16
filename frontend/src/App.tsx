@@ -103,9 +103,17 @@ export const App: React.FC = () => {
               }
             />
 
-            {/* Change Password */}
+            {/* Account Settings / Change Password / Profile */}
             <Route
               path="/change-password"
+              element={
+                <ProtectedRoute>
+                  <ChangePassword />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute>
                   <ChangePassword />

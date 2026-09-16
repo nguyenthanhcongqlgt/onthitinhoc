@@ -94,6 +94,10 @@ export const authApi = {
     const res = await apiClient.get('/auth/profile/');
     return res.data;
   },
+  updateProfile: async (userData: Partial<User>): Promise<User> => {
+    const res = await apiClient.patch('/auth/profile/', userData);
+    return res.data;
+  },
   getPendingTeachers: async (): Promise<User[]> => {
     const res = await apiClient.get('/auth/teachers/pending/');
     return res.data;
