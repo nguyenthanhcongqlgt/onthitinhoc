@@ -238,7 +238,7 @@ export const ChangePassword: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
                   Tên đăng nhập
                 </label>
-                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm font-mono select-none">
+                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm font-mono ">
                   @{user?.username}
                 </div>
               </div>
@@ -248,7 +248,7 @@ export const ChangePassword: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">
                   {user?.role === 'STUDENT' ? 'Số báo danh / Mã HS' : 'Mã định danh'}
                 </label>
-                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm font-mono select-none">
+                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm font-mono ">
                   {user?.student_id || 'Chưa thiết lập'}
                 </div>
               </div>
@@ -277,11 +277,12 @@ export const ChangePassword: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Email */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="email" className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
                   Email
                 </label>
                 <div className="relative">
                   <input
+                    id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -294,11 +295,12 @@ export const ChangePassword: React.FC = () => {
 
               {/* Số điện thoại */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                <label htmlFor="phone" className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
                   Số điện thoại
                 </label>
                 <div className="relative">
                   <input
+                    id="phone"
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
@@ -316,7 +318,7 @@ export const ChangePassword: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
                   <GraduationCap size={14} /> Lớp học
                 </label>
-                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm select-none">
+                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm ">
                   {user?.class_name || 'Chưa phân lớp'}
                 </div>
               </div>
@@ -324,7 +326,7 @@ export const ChangePassword: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
                   <School size={14} /> Trường
                 </label>
-                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm select-none">
+                <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm ">
                   {user?.school || 'THPT Quất Lâm'}
                 </div>
               </div>

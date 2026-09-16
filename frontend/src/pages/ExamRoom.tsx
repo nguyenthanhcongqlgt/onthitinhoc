@@ -12,6 +12,7 @@ import { ExamWatermark } from '../components/exam/ExamWatermark';
 import { QuestionDisputeModal } from '../components/exam/QuestionDisputeModal';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
+  LayoutGrid,
   Home,
   Shield,
   Clock,
@@ -85,6 +86,7 @@ export const ExamRoom: React.FC = () => {
   // Selected Branch for Part II
   const [selectedBranch, setSelectedBranch] = useState<'NONE' | 'CS' | 'ICT' | 'BOTH'>('NONE');
   const [showBranchModal, setShowBranchModal] = useState<boolean>(false);
+  const [showMobilePalette, setShowMobilePalette] = useState<boolean>(false);
   const [pendingBranchChoice, setPendingBranchChoice] = useState<'CS' | 'ICT'>('CS');
 
   // Submit Modal & Incomplete Alert Modal
@@ -648,7 +650,7 @@ export const ExamRoom: React.FC = () => {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-300">
         <div className="text-center space-y-3">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
           <p className="text-sm font-semibold">Đang chuẩn bị đề thi an toàn...</p>
         </div>
       </div>
@@ -786,7 +788,7 @@ export const ExamRoom: React.FC = () => {
             ? `Chưa hoàn thành: mới chọn ${answeredSubCount}/${q.options.length} ý`
             : 'Chưa làm'
         }`}
-        className={`relative flex h-8 w-8 flex-col items-center justify-center rounded-xl font-bold text-xs transition-all ${
+        className={`relative flex h-10 w-10 flex-col items-center justify-center rounded-xl font-bold text-xs transition-all ${
           isFlagged
             ? 'bg-amber-400 text-slate-950 shadow-sm ring-2 ring-amber-400/50'
             : isFully
@@ -798,7 +800,7 @@ export const ExamRoom: React.FC = () => {
       >
         <span className={isPartial ? 'text-[10px] -mt-0.5' : ''}>{q.display_number}</span>
         {isPartial && (
-          <span className="text-[7px] leading-none text-indigo-600 font-bold">
+          <span className="text-[10px] leading-none text-indigo-600 font-bold">
             {answeredSubCount}/{q.options.length}
           </span>
         )}
@@ -808,6 +810,172 @@ export const ExamRoom: React.FC = () => {
       </button>
     );
   };
+
+
+  const renderPaletteContent = () => (
+    <div className="sticky top-20 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg space-y-5">
+            {/* Header with Progress */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                  Bảng Điều Hướng Câu Hỏi
+                </h3>
+                <span className="font-mono text-xs font-bold text-blue-600">
+                  {totalAnswered}/{totalQuestions} ({progressPct}%)
+                </span>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="grid grid-cols-4 gap-1 mt-3 text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setPaletteFilter('ALL')}
+                  className={`py-1.5 rounded-lg transition-all ${
+                    paletteFilter === 'ALL'
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaletteFilter('ANSWERED')}
+                  className={`py-1.5 rounded-lg transition-all ${
+                    paletteFilter === 'ANSWERED'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Đã làm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaletteFilter('UNANSWERED')}
+                  className={`py-1.5 rounded-lg transition-all ${
+                    paletteFilter === 'UNANSWERED'
+                      ? 'bg-slate-400 text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  Chưa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaletteFilter('FLAGGED')}
+                  className={`py-1.5 rounded-lg transition-all flex items-center justify-center gap-0.5 ${
+                    paletteFilter === 'FLAGGED'
+                      ? 'bg-amber-400 text-slate-950'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />
+                  <span>({flaggedQuestions.size})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Part 1 Question Numbers */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-bold text-blue-600 flex items-center justify-between">
+                <span>Phần I ({totalPart1Count} câu)</span>
+                <span>{answeredPart1Count}/{totalPart1Count}</span>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                {part1_questions.map((q) => {
+                  const isAnswered = part1Answers[q.id] !== undefined;
+                  const isFlagged = flaggedQuestions.has(q.id);
+
+                  if (paletteFilter === 'ANSWERED' && !isAnswered) return null;
+                  if (paletteFilter === 'UNANSWERED' && isAnswered) return null;
+                  if (paletteFilter === 'FLAGGED' && !isFlagged) return null;
+
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => {
+                        const el = document.getElementById(`question-${q.id}`);
+                        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className={`relative flex h-10 w-10 items-center justify-center rounded-xl font-bold text-xs transition-all ${
+                        isFlagged
+                          ? 'bg-amber-400 text-slate-950 shadow-sm ring-2 ring-amber-400/50'
+                          : isAnswered
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'border border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-400'
+                      }`}
+                    >
+                      {q.display_number}
+                      {isFlagged && (
+                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-600 ring-1 ring-white" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Part 2 Common Question Numbers */}
+            {part2_common_questions.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
+                  <span>Phần II - Chung ({part2_common_questions.length} câu)</span>
+                  <span>{answeredPart2CommonCount}/{part2_common_questions.length}</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {part2_common_questions.map((q) => renderP2PaletteButton(q))}
+                </div>
+              </div>
+            )}
+
+            {/* Part 2 Branch Question Numbers */}
+            {isBothMode ? (
+              <>
+                {part2_cs_questions.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
+                      <span>Phần II - CS ({part2_cs_questions.length} câu)</span>
+                      <span>{answeredPart2CsCount}/{part2_cs_questions.length}</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {part2_cs_questions.map((q) => renderP2PaletteButton(q))}
+                    </div>
+                  </div>
+                )}
+                {part2_ict_questions.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
+                      <span>Phần II - ICT ({part2_ict_questions.length} câu)</span>
+                      <span>{answeredPart2IctCount}/{part2_ict_questions.length}</span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {part2_ict_questions.map((q) => renderP2PaletteButton(q))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : selectedBranch !== 'NONE' ? (
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
+                  <span>Phần II - {selectedBranch} ({currentPart2BranchQuestions.length} câu)</span>
+                  <span>{answeredPart2BranchCount}/{currentPart2BranchQuestions.length}</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {currentPart2BranchQuestions.map((q) => renderP2PaletteButton(q))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Submit Action */}
+            <button
+              onClick={handleOpenSubmitModal}
+              className="w-full mt-4 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 transition-all"
+            >
+              <Send className="h-4 w-4" />
+              Nộp Bài Thi
+            </button>
+          </div>
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col exam-secure-mode select-none relative">
@@ -845,7 +1013,7 @@ export const ExamRoom: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedBranch('CS')}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  className={`px-2.5 py-1.5 rounded-lg font-bold transition-all ${
                     selectedBranch === 'CS'
                       ? 'bg-white text-slate-900 shadow-sm'
                       : 'text-white/80 hover:text-white'
@@ -856,7 +1024,7 @@ export const ExamRoom: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setSelectedBranch('ICT')}
-                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  className={`px-2.5 py-1.5 rounded-lg font-bold transition-all ${
                     selectedBranch === 'ICT'
                       ? 'bg-white text-slate-900 shadow-sm'
                       : 'text-white/80 hover:text-white'
@@ -948,11 +1116,11 @@ export const ExamRoom: React.FC = () => {
             <ThemeToggle />
 
             {/* Font Size Zoom Controls */}
-            <div className="hidden md:flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold text-slate-600">
+            <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-0.5 text-xs font-semibold text-slate-600">
               <button
                 type="button"
                 onClick={() => setFontSize('sm')}
-                className={`px-2 py-1 rounded-lg transition-all ${
+                className={`px-2 py-1.5 rounded-lg transition-all ${
                   fontSize === 'sm' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'hover:text-slate-900'
                 }`}
                 title="Cỡ chữ nhỏ"
@@ -962,7 +1130,7 @@ export const ExamRoom: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFontSize('md')}
-                className={`px-2 py-1 rounded-lg transition-all ${
+                className={`px-2 py-1.5 rounded-lg transition-all ${
                   fontSize === 'md' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'hover:text-slate-900'
                 }`}
                 title="Cỡ chữ vừa"
@@ -972,7 +1140,7 @@ export const ExamRoom: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFontSize('lg')}
-                className={`px-2 py-1 rounded-lg transition-all ${
+                className={`px-2 py-1.5 rounded-lg transition-all ${
                   fontSize === 'lg' ? 'bg-white text-blue-600 shadow-sm font-bold' : 'hover:text-slate-900'
                 }`}
                 title="Cỡ chữ lớn"
@@ -1360,170 +1528,29 @@ export const ExamRoom: React.FC = () => {
         </main>
 
         {/* Right Sidebar: Question Palette & Navigation */}
-        <aside className="lg:col-span-1">
-          <div className="sticky top-20 rounded-3xl border border-slate-200 bg-white p-5 shadow-lg space-y-5">
-            {/* Header with Progress */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
-                  Bảng Điều Hướng Câu Hỏi
-                </h3>
-                <span className="font-mono text-xs font-bold text-blue-600">
-                  {totalAnswered}/{totalQuestions} ({progressPct}%)
-                </span>
-              </div>
-
-              {/* Filter Tabs */}
-              <div className="grid grid-cols-4 gap-1 mt-3 text-[10px] font-bold">
-                <button
-                  type="button"
-                  onClick={() => setPaletteFilter('ALL')}
-                  className={`py-1 rounded-lg transition-all ${
-                    paletteFilter === 'ALL'
-                      ? 'bg-slate-900 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  Tất cả
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaletteFilter('ANSWERED')}
-                  className={`py-1 rounded-lg transition-all ${
-                    paletteFilter === 'ANSWERED'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  Đã làm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaletteFilter('UNANSWERED')}
-                  className={`py-1 rounded-lg transition-all ${
-                    paletteFilter === 'UNANSWERED'
-                      ? 'bg-slate-400 text-white'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  Chưa
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaletteFilter('FLAGGED')}
-                  className={`py-1 rounded-lg transition-all flex items-center justify-center gap-0.5 ${
-                    paletteFilter === 'FLAGGED'
-                      ? 'bg-amber-400 text-slate-950'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />
-                  <span>({flaggedQuestions.size})</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Part 1 Question Numbers */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-bold text-blue-600 flex items-center justify-between">
-                <span>Phần I ({totalPart1Count} câu)</span>
-                <span>{answeredPart1Count}/{totalPart1Count}</span>
-              </div>
-              <div className="grid grid-cols-5 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                {part1_questions.map((q) => {
-                  const isAnswered = part1Answers[q.id] !== undefined;
-                  const isFlagged = flaggedQuestions.has(q.id);
-
-                  if (paletteFilter === 'ANSWERED' && !isAnswered) return null;
-                  if (paletteFilter === 'UNANSWERED' && isAnswered) return null;
-                  if (paletteFilter === 'FLAGGED' && !isFlagged) return null;
-
-                  return (
-                    <button
-                      key={q.id}
-                      onClick={() => {
-                        const el = document.getElementById(`question-${q.id}`);
-                        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`relative flex h-8 w-8 items-center justify-center rounded-xl font-bold text-xs transition-all ${
-                        isFlagged
-                          ? 'bg-amber-400 text-slate-950 shadow-sm ring-2 ring-amber-400/50'
-                          : isAnswered
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'border border-slate-200 bg-slate-50 text-slate-600 hover:border-blue-400'
-                      }`}
-                    >
-                      {q.display_number}
-                      {isFlagged && (
-                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-amber-600 ring-1 ring-white" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Part 2 Common Question Numbers */}
-            {part2_common_questions.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
-                  <span>Phần II - Chung ({part2_common_questions.length} câu)</span>
-                  <span>{answeredPart2CommonCount}/{part2_common_questions.length}</span>
-                </div>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {part2_common_questions.map((q) => renderP2PaletteButton(q))}
-                </div>
-              </div>
-            )}
-
-            {/* Part 2 Branch Question Numbers */}
-            {isBothMode ? (
-              <>
-                {part2_cs_questions.length > 0 && (
-                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
-                      <span>Phần II - CS ({part2_cs_questions.length} câu)</span>
-                      <span>{answeredPart2CsCount}/{part2_cs_questions.length}</span>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {part2_cs_questions.map((q) => renderP2PaletteButton(q))}
-                    </div>
-                  </div>
-                )}
-                {part2_ict_questions.length > 0 && (
-                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
-                      <span>Phần II - ICT ({part2_ict_questions.length} câu)</span>
-                      <span>{answeredPart2IctCount}/{part2_ict_questions.length}</span>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1.5">
-                      {part2_ict_questions.map((q) => renderP2PaletteButton(q))}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : selectedBranch !== 'NONE' ? (
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="text-[11px] font-bold text-indigo-600 flex items-center justify-between">
-                  <span>Phần II - {selectedBranch} ({currentPart2BranchQuestions.length} câu)</span>
-                  <span>{answeredPart2BranchCount}/{currentPart2BranchQuestions.length}</span>
-                </div>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {currentPart2BranchQuestions.map((q) => renderP2PaletteButton(q))}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Submit Action */}
-            <button
-              onClick={handleOpenSubmitModal}
-              className="w-full mt-4 flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 transition-all"
-            >
-              <Send className="h-4 w-4" />
-              Nộp Bài Thi
-            </button>
-          </div>
+        <aside className="hidden lg:block lg:col-span-1">
+          {renderPaletteContent()}
         </aside>
+
+        {/* Mobile Floating Palette Button */}
+        <button
+          onClick={() => setShowMobilePalette(true)}
+          className="fixed bottom-6 right-6 z-40 lg:hidden flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-white font-bold text-xs shadow-xl shadow-blue-600/30 hover:bg-blue-500 transition-all"
+        >
+          <LayoutGrid className="h-4 w-4" />
+          <span>{totalAnswered}/{totalQuestions}</span>
+        </button>
+
+        {/* Mobile Question Palette Bottom Sheet */}
+        {showMobilePalette && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowMobilePalette(false)} />
+            <div className="absolute bottom-0 left-0 right-0 max-h-[75vh] overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl animate-in slide-in-from-bottom">
+              {renderPaletteContent()}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Tab Switch & Anti-Cheat Warning Modal */}
@@ -1641,7 +1668,7 @@ export const ExamRoom: React.FC = () => {
                         key={item.id}
                         type="button"
                         onClick={() => scrollToQuestion(item.id)}
-                        className="px-2.5 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-600 hover:text-white transition-all shadow-xs"
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-600 hover:text-white transition-all shadow-xs"
                       >
                         Câu {item.display_number}
                       </button>
@@ -1674,7 +1701,7 @@ export const ExamRoom: React.FC = () => {
                             Chưa chọn ý: <strong className="text-rose-600">{item.missingOptions.join(', ')}</strong>
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-indigo-600 group-hover:underline flex items-center gap-0.5">
+                        <span className="text-[11px] font-bold text-indigo-600 group-hover:underline flex items-center gap-0.5">
                           Đến câu này <ArrowRight className="h-3 w-3" />
                         </span>
                       </div>

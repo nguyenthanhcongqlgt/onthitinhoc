@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Home, GraduationCap, Lock, AlertCircle, ArrowRight, Sparkles, ShieldCheck, KeyRound, ArrowLeft } from 'lucide-react';
+import { Home, GraduationCap, Lock, AlertCircle, ArrowRight, Sparkles, ShieldCheck, KeyRound, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const Login: React.FC = () => {
@@ -15,6 +15,7 @@ export const Login: React.FC = () => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -192,10 +193,11 @@ export const Login: React.FC = () => {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label htmlFor="username" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                   Tên đăng nhập / Số báo danh
                 </label>
                 <input
+                  id="username"
                   type="text"
                   required
                   value={username}
@@ -206,19 +208,26 @@ export const Login: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                   Mật khẩu
                 </label>
                 <div className="relative">
                   <input
-                    type="password"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-900/90 px-4 py-3 text-sm text-white placeholder-slate-500 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-10"
                   />
-                  <Lock className="absolute right-3.5 top-3.5 h-4 w-4 text-slate-500" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 

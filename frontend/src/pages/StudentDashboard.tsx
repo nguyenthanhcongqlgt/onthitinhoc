@@ -224,14 +224,14 @@ export const StudentDashboard: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               {exams.length > 0 && (
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                <div className="relative w-64 sm:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type="text"
                     value={examSearch}
                     onChange={(e) => setExamSearch(e.target.value)}
                     placeholder="Tìm kiếm mã đề / tên đề..."
-                    className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-700/60 bg-slate-950/60 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-700/60 bg-slate-950/60 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               )}
@@ -248,7 +248,7 @@ export const StudentDashboard: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setSelectedFolderFilter('ALL')}
-                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                   selectedFolderFilter === 'ALL'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
@@ -265,7 +265,7 @@ export const StudentDashboard: React.FC = () => {
                     key={name}
                     type="button"
                     onClick={() => setSelectedFolderFilter(name)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
                       selectedFolderFilter === name
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'bg-slate-950 border border-slate-800 text-slate-300 hover:text-white'
@@ -587,7 +587,7 @@ export const StudentDashboard: React.FC = () => {
                         <td className="px-5 py-4 text-right">
                           <button
                             onClick={() => navigate(`/result/${session.id}`)}
-                            className="rounded-lg bg-blue-600/20 px-3 py-1.5 font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all text-xs"
+                            className="rounded-lg bg-blue-600/20 px-3.5 py-2 font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all text-xs"
                           >
                             Xem Phân Tích
                           </button>

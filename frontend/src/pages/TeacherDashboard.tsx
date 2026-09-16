@@ -146,6 +146,7 @@ export const TeacherDashboard: React.FC = () => {
   const [movingExam, setMovingExam] = useState<ExamInfo | null>(null);
   const [folderScopeTab, setFolderScopeTab] = useState<'ALL' | 'SHARED' | 'MY_FOLDERS'>('ALL');
   const [folderSearch, setFolderSearch] = useState<string>('');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   const fetchData = async () => {
     try {
@@ -651,7 +652,7 @@ export const TeacherDashboard: React.FC = () => {
                     </span>
 
                     {/* Quick action buttons on hover */}
-                    <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
+                    <div className="flex lg:hidden lg:group-hover:flex items-center gap-0.5 ml-1">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -778,7 +779,17 @@ export const TeacherDashboard: React.FC = () => {
               <div className="flex flex-col lg:flex-row gap-5 items-start">
                 {/* LEFT: CÂY THƯ MỤC SIDEBAR */}
                 <div className="w-full lg:w-72 shrink-0 space-y-3">
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-3 shadow-md sticky top-20">
+                  <button
+                    onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+                    className="lg:hidden flex w-full items-center justify-between rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm font-bold text-slate-300 shadow-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-blue-400" />
+                      <span>Thư Mục Đề Thi</span>
+                    </div>
+                    <span>{isMobileSidebarOpen ? 'Thu gọn' : 'Mở rộng'}</span>
+                  </button>
+                  <div className={`rounded-2xl border border-slate-800 bg-slate-950/70 p-3.5 space-y-3 shadow-md sticky top-20 ${isMobileSidebarOpen ? 'block' : 'hidden lg:block'}`}>
                     {/* Header with Title & Add Folder button */}
                     <div className="flex items-center justify-between pb-2 border-b border-slate-800/80">
                       <div className="flex items-center gap-2">

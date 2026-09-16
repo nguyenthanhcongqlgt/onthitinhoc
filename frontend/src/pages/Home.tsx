@@ -777,7 +777,7 @@ export const Home: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 space-y-4 relative">
               <div className="flex items-center justify-between">
                 <span className="text-3xl font-black text-blue-500/30">01</span>
@@ -991,7 +991,7 @@ export const Home: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
             <p>© 2025 - 2026 Trường THPT Quất Lâm - Ninh Bình. Phát triển phục vụ giáo dục nội bộ.</p>
             <div className="flex items-center gap-4">
               <button
@@ -1199,7 +1199,7 @@ export const Home: React.FC = () => {
                 >
                   <div>
                     <h4 className="font-bold text-slate-200 group-hover:text-purple-300">{exam.title}</h4>
-                    <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
                       <Clock className="h-3 w-3" /> {exam.duration_minutes} phút
                     </p>
                   </div>
