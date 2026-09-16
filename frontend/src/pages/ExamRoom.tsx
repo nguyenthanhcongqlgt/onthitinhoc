@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { assessmentApi } from '../services/api';
+import { assessmentApi, examsApi } from '../services/api';
 import { ExamStartPayload, QuestionMasked } from '../types';
 import { useAntiCheat } from '../hooks/useAntiCheat';
 import { useExamTimer } from '../hooks/useExamTimer';
@@ -31,17 +31,34 @@ import {
   Wifi,
   WifiOff,
   CloudUpload,
+  Eye,
 } from 'lucide-react';
 
 export const ExamRoom: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPreviewParam = searchParams.get('preview') === 'true';
   const { user } = useAuth();
 
   const [payload, setPayload] = useState<ExamStartPayload | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasStarted, setHasStarted] = useState<boolean>(false);
+
+  const isPreview = isPreviewParam || payload?.is_preview === true;
+  const [showAnswerKey, setShowAnswerKey] = useState<boolean>(false);
+  const [showSimulatedResultModal, setShowSimulatedResultModal] = useState<boolean>(false);
+  const [simulatedScore, setSimulatedScore] = useState<{
+    totalScore: number;
+    maxScore: number;
+    p1Score: number;
+    p2Score: number;
+    p1Correct: number;
+    p1Total: number;
+    p2SubCorrect: number;
+    p2SubTotal: number;
+  } | null>(null);
 
   // Student Answers state
   const [part1Answers, setPart1Answers] = useState<Record<number, number>>({});
@@ -88,6 +105,22 @@ export const ExamRoom: React.FC = () => {
     const initExam = async () => {
       if (!examId) return;
       try {
+        if (isPreviewParam) {
+          const data = await examsApi.previewExam(Number(examId));
+          setPayload(data);
+          setHasStarted(true); // Auto-start in preview mode for immediate inspection
+          const isBoth = data.data.exam.branch_mode === 'BOTH' || data.selected_branch === 'BOTH';
+          if (isBoth) {
+            setSelectedBranch('BOTH');
+          } else if (data.selected_branch && data.selected_branch !== 'NONE') {
+            setSelectedBranch(data.selected_branch);
+          } else {
+            setSelectedBranch('CS');
+          }
+          setIsLoading(false);
+          return;
+        }
+
         const data = await assessmentApi.startExam(Number(examId));
         setPayload(data);
         const isBoth = data.data.exam.branch_mode === 'BOTH' || data.selected_branch === 'BOTH';
@@ -136,17 +169,17 @@ export const ExamRoom: React.FC = () => {
       } catch (err: any) {
         console.error(err);
         alert(err.response?.data?.detail || 'Không thể tải đề thi.');
-        navigate('/dashboard');
+        navigate('/teacher');
       } finally {
         setIsLoading(false);
       }
     };
     initExam();
-  }, [examId, navigate]);
+  }, [examId, isPreviewParam, navigate]);
 
   // Auto-Save to LocalStorage Cache
   useEffect(() => {
-    if (!payload) return;
+    if (!payload || isPreview) return;
     const cacheKey = `exam_cache_${payload.session_id}`;
     const dataToCache = {
       part1: part1Answers,
@@ -156,7 +189,7 @@ export const ExamRoom: React.FC = () => {
       timestamp: Date.now(),
     };
     localStorage.setItem(cacheKey, JSON.stringify(dataToCache));
-  }, [payload, part1Answers, part2Answers, flaggedQuestions, eliminatedOptions]);
+  }, [payload, isPreview, part1Answers, part2Answers, flaggedQuestions, eliminatedOptions]);
 
   // C4: Dùng useRef để giữ reference ổn định, tránh reset interval liên tục
   const draftAnswersRef = React.useRef({ part1Answers, part2Answers, flaggedQuestions, eliminatedOptions });
@@ -166,7 +199,7 @@ export const ExamRoom: React.FC = () => {
 
   // Server-side Auto-Save periodic timer (every 15s)
   const syncDraftToServer = useCallback(async () => {
-    if (!payload || !payload.session_id || !navigator.onLine) return;
+    if (isPreview || !payload || !payload.session_id || !navigator.onLine) return;
     setIsSyncing(true);
     try {
       const { part1Answers: p1, part2Answers: p2, flaggedQuestions: fg, eliminatedOptions: el } = draftAnswersRef.current;
@@ -374,6 +407,76 @@ export const ExamRoom: React.FC = () => {
       const isBoth = payload.data.exam.branch_mode === 'BOTH' || selectedBranch === 'BOTH';
       const effectiveBranch = isBoth ? 'BOTH' : (selectedBranch === 'NONE' ? 'CS' : selectedBranch);
 
+      if (isPreview) {
+        // Calculate simulated score locally without writing to backend
+        let p1Points = 0;
+        let p1Max = 0;
+        let p1Correct = 0;
+        const p1Total = (payload.data.part1_questions || []).length;
+
+        (payload.data.part1_questions || []).forEach((q) => {
+          const qPoint = Number(q.point !== undefined && q.point !== null ? q.point : 0.5);
+          p1Max += qPoint;
+          const userOptId = part1Answers[q.id];
+          const correctOpt = q.options.find((o) => o.is_correct === true);
+          if (userOptId && correctOpt && userOptId === correctOpt.id) {
+            p1Points += qPoint;
+            p1Correct += 1;
+          }
+        });
+
+        let p2Points = 0;
+        let p2Max = 0;
+        let p2SubCorrect = 0;
+        let p2SubTotal = 0;
+
+        const scoreP2Question = (q: QuestionMasked) => {
+          const qPoint = Number(q.point !== undefined && q.point !== null ? q.point : 2.0);
+          p2Max += qPoint;
+          const userMap = part2Answers[q.id] || {};
+          let correctCountInQ = 0;
+          q.options.forEach((opt) => {
+            p2SubTotal += 1;
+            const userVal = userMap[String(opt.id)];
+            if (typeof userVal === 'boolean' && opt.is_correct !== undefined && userVal === opt.is_correct) {
+              correctCountInQ += 1;
+              p2SubCorrect += 1;
+            }
+          });
+          if (correctCountInQ === 1) p2Points += qPoint * 0.1;
+          else if (correctCountInQ === 2) p2Points += qPoint * 0.25;
+          else if (correctCountInQ === 3) p2Points += qPoint * 0.5;
+          else if (correctCountInQ === 4) p2Points += qPoint * 1.0;
+        };
+
+        (payload.data.part2_common_questions || []).forEach(scoreP2Question);
+
+        if (isBoth) {
+          (payload.data.part2_branches?.CS || []).forEach(scoreP2Question);
+          (payload.data.part2_branches?.ICT || []).forEach(scoreP2Question);
+        } else if (selectedBranch === 'CS') {
+          (payload.data.part2_branches?.CS || []).forEach(scoreP2Question);
+        } else if (selectedBranch === 'ICT') {
+          (payload.data.part2_branches?.ICT || []).forEach(scoreP2Question);
+        }
+
+        const round2 = (num: number) => Math.round(num * 100) / 100;
+        setSimulatedScore({
+          totalScore: round2(p1Points + p2Points),
+          maxScore: round2(p1Max + p2Max),
+          p1Score: round2(p1Points),
+          p2Score: round2(p2Points),
+          p1Correct,
+          p1Total,
+          p2SubCorrect,
+          p2SubTotal,
+        });
+        setShowSubmitModal(false);
+        setShowSimulatedResultModal(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       const part1Formatted = Object.entries(part1Answers).map(([qId, optId]) => ({
         question_id: Number(qId),
         selected_option_id: optId,
@@ -404,13 +507,13 @@ export const ExamRoom: React.FC = () => {
         setIsSubmitting(false);
       }
     },
-    [payload, isSubmitting, part1Answers, part2Answers, selectedBranch, navigate, validateCompletion]
+    [payload, isSubmitting, isPreview, part1Answers, part2Answers, selectedBranch, navigate, validateCompletion]
   );
 
   // Anti-Cheat Handlers
   const handleViolation = useCallback(
     async (type: string, details?: string) => {
-      if (!payload) return;
+      if (isPreview || !payload) return;
 
       const part1Formatted = Object.entries(part1Answers).map(([qId, optId]) => ({
         question_id: Number(qId),
@@ -437,7 +540,7 @@ export const ExamRoom: React.FC = () => {
         console.error('Failed to log violation:', err);
       }
     },
-    [payload, part1Answers, part2Answers, navigate]
+    [payload, isPreview, part1Answers, part2Answers, navigate]
   );
 
   const handleMaxViolationsReached = useCallback(() => {
@@ -452,7 +555,7 @@ export const ExamRoom: React.FC = () => {
     exitFullscreen,
     closeWarningModal,
   } = useAntiCheat({
-    enabled: hasStarted,
+    enabled: hasStarted && !isPreview,
     maxViolations: payload?.max_tab_violations || 3,
     onViolation: handleViolation,
     onMaxViolationsReached: handleMaxViolationsReached,
@@ -472,11 +575,18 @@ export const ExamRoom: React.FC = () => {
 
   const handleStartExamClick = async () => {
     setHasStarted(true);
-    await requestFullscreen();
+    if (!isPreview) {
+      await requestFullscreen();
+    }
   };
 
   const handleConfirmBranch = async () => {
     if (!payload) return;
+    if (isPreview) {
+      setSelectedBranch(pendingBranchChoice);
+      setShowBranchModal(false);
+      return;
+    }
     try {
       await assessmentApi.selectBranch(payload.session_id, pendingBranchChoice);
       setSelectedBranch(pendingBranchChoice);
@@ -634,10 +744,86 @@ export const ExamRoom: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col exam-secure-mode select-none relative">
+      {/* Teacher Inspection Preview Banner */}
+      {isPreview && (
+        <div className="sticky top-0 z-50 bg-gradient-to-r from-emerald-800 via-teal-800 to-indigo-900 text-white px-4 sm:px-6 py-2.5 shadow-md flex items-center justify-between flex-wrap gap-2.5 text-xs border-b border-white/10">
+          <div className="flex items-center gap-2.5">
+            <span className="flex items-center gap-1.5 bg-amber-400 text-slate-950 font-extrabold px-3 py-1 rounded-xl shadow-xs text-[11px] uppercase tracking-wide">
+              <Eye className="h-3.5 w-3.5" /> Chế độ Xem Trước (Giáo Viên)
+            </span>
+            <span className="hidden lg:inline text-white/90 text-xs">
+              Quan sát giao diện chuẩn học sinh • Không tính điểm • Không ghi nhận gian lận
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Toggle Answer Key Button */}
+            <button
+              type="button"
+              onClick={() => setShowAnswerKey(!showAnswerKey)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all shadow-sm ${
+                showAnswerKey
+                  ? 'bg-amber-300 text-slate-950 ring-2 ring-white/50'
+                  : 'bg-white/20 hover:bg-white/30 text-white'
+              }`}
+              title="Bật/Tắt hiển thị đáp án đúng và lời giải chi tiết cho tất cả câu hỏi"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-200" />
+              <span>{showAnswerKey ? 'Ẩn đáp án & Lời giải' : 'Hiện đáp án & Lời giải'}</span>
+            </button>
+
+            {/* Quick Branch Switching in Preview */}
+            {!isBothMode && (
+              <div className="flex items-center rounded-xl bg-black/30 p-0.5 border border-white/15 text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBranch('CS')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    selectedBranch === 'CS'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Nhánh CS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBranch('ICT')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    selectedBranch === 'ICT'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Nhánh ICT
+                </button>
+              </div>
+            )}
+
+            {/* Exit Preview */}
+            <button
+              type="button"
+              onClick={() => {
+                if (window.history.length > 1) {
+                  navigate(-1);
+                } else {
+                  navigate('/teacher');
+                }
+              }}
+              className="flex items-center gap-1 rounded-xl bg-white/20 hover:bg-white/30 px-3 py-1.5 font-bold text-white transition-all shadow-sm"
+              title="Thoát xem trước và quay lại trang quản lý"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Thoát xem trước</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Anti-Screen Capture Watermark */}
       <ExamWatermark
-        studentName={user?.full_name || user?.username || 'Thí sinh HSG'}
-        studentId={user?.student_id || 'QL-2025'}
+        studentName={isPreview ? `[XEM TRƯỚC] ${user?.full_name || user?.username || 'Giáo viên'}` : (user?.full_name || user?.username || 'Thí sinh HSG')}
+        studentId={isPreview ? 'GIAO-VIEN-PREVIEW' : (user?.student_id || 'QL-2025')}
         sessionId={payload.session_id}
       />
 
@@ -670,8 +856,8 @@ export const ExamRoom: React.FC = () => {
                 {payload.data.exam.title}
               </h1>
               <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                <span>{user?.full_name || user?.username}</span>
-                <span>• SBD: {user?.student_id || 'QL-HSG'}</span>
+                <span>{isPreview ? (user?.full_name || user?.username || 'Giáo viên') : (user?.full_name || user?.username)}</span>
+                <span>• SBD: {isPreview ? 'GV-XEMTRUOC' : (user?.student_id || 'QL-HSG')}</span>
                 {selectedBranch === 'BOTH' ? (
                   <span className="text-indigo-600 font-bold">• Chuyên đề: Cả CS & ICT</span>
                 ) : selectedBranch !== 'NONE' ? (
@@ -721,44 +907,53 @@ export const ExamRoom: React.FC = () => {
             </div>
 
             {/* Server Sync / Offline Indicator */}
-            <div
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
-                !isOnline
-                  ? 'border-red-300 bg-red-50 text-red-700 animate-pulse'
-                  : isSyncing
-                  ? 'border-amber-300 bg-amber-50 text-amber-700'
-                  : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              }`}
-            >
-              {!isOnline ? (
-                <>
-                  <WifiOff className="h-3.5 w-3.5 text-red-600" />
-                  <span>🔴 Mất mạng (Lưu cục bộ)</span>
-                </>
-              ) : isSyncing ? (
-                <>
-                  <CloudUpload className="h-3.5 w-3.5 text-amber-600 animate-bounce" />
-                  <span>Đang lưu lên máy chủ...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>🟢 Đã lưu lên máy chủ</span>
-                </>
-              )}
-            </div>
+            {!isPreview && (
+              <div
+                className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all ${
+                  !isOnline
+                    ? 'border-red-300 bg-red-50 text-red-700 animate-pulse'
+                    : isSyncing
+                    ? 'border-amber-300 bg-amber-50 text-amber-700'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                }`}
+              >
+                {!isOnline ? (
+                  <>
+                    <WifiOff className="h-3.5 w-3.5 text-red-600" />
+                    <span>🔴 Mất mạng (Lưu cục bộ)</span>
+                  </>
+                ) : isSyncing ? (
+                  <>
+                    <CloudUpload className="h-3.5 w-3.5 text-amber-600 animate-bounce" />
+                    <span>Đang lưu lên máy chủ...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>🟢 Đã lưu lên máy chủ</span>
+                  </>
+                )}
+              </div>
+            )}
 
-            {/* Violation Badge */}
-            <div
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors ${
-                violationCount > 0
-                  ? 'border-red-300 bg-red-50 text-red-700 animate-bounce'
-                  : 'border-slate-200 bg-slate-50 text-slate-600'
-              }`}
-            >
-              <Shield className="h-3.5 w-3.5" />
-              <span>Vi phạm: {violationCount}/{payload.max_tab_violations}</span>
-            </div>
+            {/* Violation Badge or Preview Immunity */}
+            {isPreview ? (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 text-xs font-bold">
+                <Shield className="h-3.5 w-3.5" />
+                <span>Miễn giám sát (Xem trước)</span>
+              </div>
+            ) : (
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors ${
+                  violationCount > 0
+                    ? 'border-red-300 bg-red-50 text-red-700 animate-bounce'
+                    : 'border-slate-200 bg-slate-50 text-slate-600'
+                }`}
+              >
+                <Shield className="h-3.5 w-3.5" />
+                <span>Vi phạm: {violationCount}/{payload.max_tab_violations}</span>
+              </div>
+            )}
 
             {/* Timer */}
             <div
@@ -778,7 +973,7 @@ export const ExamRoom: React.FC = () => {
               className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-emerald-500 transition-all"
             >
               <Send className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Nộp Bài</span>
+              <span className="hidden sm:inline">{isPreview ? 'Nộp Thử' : 'Nộp Bài'}</span>
             </button>
           </div>
         </div>
@@ -834,6 +1029,7 @@ export const ExamRoom: React.FC = () => {
                     onToggleEliminate={handleToggleEliminate}
                     fontSize={fontSize}
                     allowRunCode={payload.data.exam.allow_run_code ?? true}
+                    showAnswerKey={showAnswerKey}
                   />
                 </div>
               ))}
@@ -889,6 +1085,7 @@ export const ExamRoom: React.FC = () => {
                       onReportQuestion={(question) => setDisputeQuestion({ id: question.id, number: question.display_number, content: question.content })}
                       fontSize={fontSize}
                       allowRunCode={payload.data.exam.allow_run_code ?? true}
+                      showAnswerKey={showAnswerKey}
                     />
                   </div>
                 ))}
@@ -947,6 +1144,7 @@ export const ExamRoom: React.FC = () => {
                           onReportQuestion={(question) => setDisputeQuestion({ id: question.id, number: question.display_number, content: question.content })}
                           fontSize={fontSize}
                           allowRunCode={payload.data.exam.allow_run_code ?? true}
+                          showAnswerKey={showAnswerKey}
                         />
                       </div>
                     ))}
@@ -988,6 +1186,7 @@ export const ExamRoom: React.FC = () => {
                           onReportQuestion={(question) => setDisputeQuestion({ id: question.id, number: question.display_number, content: question.content })}
                           fontSize={fontSize}
                           allowRunCode={payload.data.exam.allow_run_code ?? true}
+                          showAnswerKey={showAnswerKey}
                         />
                       </div>
                     ))}
@@ -1041,7 +1240,9 @@ export const ExamRoom: React.FC = () => {
                               : 'Tin học Ứng dụng (ICT - CSDL SQL, Mạng & Bảo mật Web)'}
                           </span>
                           <p className="text-[11px] text-indigo-700 font-medium">
-                            Lựa chọn đã được khóa cứng (Hard-lock) đảm bảo tính toàn vẹn của đề thi.
+                            {isPreview
+                              ? 'Ở chế độ xem trước, Thầy/Cô có thể tự do chuyển đổi giữa 2 nhánh CS và ICT ở thanh công cụ phía trên.'
+                              : 'Lựa chọn đã được khóa cứng (Hard-lock) đảm bảo tính toàn vẹn của đề thi.'}
                           </p>
                         </div>
                       </div>
@@ -1072,6 +1273,7 @@ export const ExamRoom: React.FC = () => {
                           onReportQuestion={(question) => setDisputeQuestion({ id: question.id, number: question.display_number, content: question.content })}
                           fontSize={fontSize}
                           allowRunCode={payload.data.exam.allow_run_code ?? true}
+                          showAnswerKey={showAnswerKey}
                         />
                       </div>
                     ))}
@@ -1502,6 +1704,80 @@ export const ExamRoom: React.FC = () => {
               >
                 <Send className="h-3.5 w-3.5" />
                 <span>{isSubmitting ? 'Đang chấm bài...' : 'Chắc Chắn Nộp Bài'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Simulated Score Result Modal for Preview Mode */}
+      {showSimulatedResultModal && simulatedScore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in">
+          <div className="w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xl text-slate-900 space-y-5">
+            <div className="flex items-center gap-3 border-b border-slate-100 pb-3.5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 shadow-inner">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-slate-900">
+                  Kết Quả Chấm Thử (Mô Phỏng)
+                </h3>
+                <p className="text-xs text-slate-500">Chế độ xem trước dành riêng cho Giáo viên</p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3.5 text-xs text-amber-900 leading-relaxed">
+              <span className="font-bold">Lưu ý:</span> Điểm số dưới đây được tính tự động dựa trên ma trận chuẩn của Bộ GD&ĐT (Phần I trắc nghiệm 4 lựa chọn, Phần II trắc nghiệm Đúng/Sai). Dữ liệu này <strong>hoàn toàn không được lưu</strong> vào hệ thống hay ảnh hưởng đến học sinh.
+            </div>
+
+            <div className="text-center py-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="text-4xl font-extrabold text-blue-600 font-mono">
+                {simulatedScore.totalScore}{' '}
+                <span className="text-lg font-normal text-slate-500">/ {simulatedScore.maxScore}</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-500 mt-1">Tổng điểm đạt được</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1">
+                <span className="font-bold text-blue-900">Phần I (Trắc nghiệm):</span>
+                <p className="text-base font-extrabold text-blue-700 font-mono">{simulatedScore.p1Score} điểm</p>
+                <p className="text-[11px] text-slate-500">Đúng {simulatedScore.p1Correct}/{simulatedScore.p1Total} câu</p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1">
+                <span className="font-bold text-indigo-900">Phần II (Đúng/Sai):</span>
+                <p className="text-base font-extrabold text-indigo-700 font-mono">{simulatedScore.p2Score} điểm</p>
+                <p className="text-[11px] text-slate-500">Đúng {simulatedScore.p2SubCorrect}/{simulatedScore.p2SubTotal} ý</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSimulatedResultModal(false);
+                  setShowAnswerKey(true);
+                }}
+                className="rounded-xl border border-slate-300 bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-200 transition-all flex items-center gap-1.5"
+              >
+                <Eye className="h-4 w-4 text-slate-600" />
+                <span>Xem lại bài làm & Lời giải</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                  } else {
+                    navigate('/teacher');
+                  }
+                }}
+                className="rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-500 shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Hoàn tất & Thoát</span>
               </button>
             </div>
           </div>

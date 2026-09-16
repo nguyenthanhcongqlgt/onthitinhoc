@@ -2,7 +2,7 @@ import React from 'react';
 import { QuestionMasked } from '../../types';
 import { CodeViewer } from './CodeViewer';
 import { MathFormula } from './MathFormula';
-import { Check, X, Star, Flag } from 'lucide-react';
+import { Check, X, Star, Flag, CheckCircle2 } from 'lucide-react';
 
 interface QuestionCardPart2Props {
   question: QuestionMasked;
@@ -13,6 +13,7 @@ interface QuestionCardPart2Props {
   onReportQuestion?: (question: QuestionMasked) => void;
   fontSize?: 'sm' | 'md' | 'lg';
   allowRunCode?: boolean;
+  showAnswerKey?: boolean;
 }
 
 export const QuestionCardPart2: React.FC<QuestionCardPart2Props> = ({
@@ -24,6 +25,7 @@ export const QuestionCardPart2: React.FC<QuestionCardPart2Props> = ({
   onReportQuestion,
   fontSize = 'md',
   allowRunCode = true,
+  showAnswerKey = false,
 }) => {
   const branchName =
     question.branch === 'CS'
@@ -152,8 +154,21 @@ export const QuestionCardPart2: React.FC<QuestionCardPart2Props> = ({
                 </div>
               </div>
 
-              {/* True / False Buttons */}
-              <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
+              {/* Correct Answer Badge (Preview mode) & True / False Buttons */}
+              <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center flex-wrap sm:flex-nowrap">
+                {showAnswerKey && option.is_correct !== undefined && option.is_correct !== null && (
+                  <span
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold border shadow-xs flex items-center gap-1 shrink-0 ${
+                      option.is_correct
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : 'bg-rose-100 text-rose-800 border-rose-300'
+                    }`}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Đáp án: {option.is_correct ? 'ĐÚNG' : 'SAI'}</span>
+                  </span>
+                )}
+
                 <button
                   type="button"
                   onClick={() => onSelectSubAnswer(question.id, option.id, true)}
@@ -184,6 +199,35 @@ export const QuestionCardPart2: React.FC<QuestionCardPart2Props> = ({
           );
         })}
       </div>
+
+      {/* Teacher Answer Key / Explanation */}
+      {showAnswerKey && (question.explanation || question.options.some((o) => o.explanation)) && (
+        <div className="mt-5 p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200 text-slate-800 text-xs shadow-xs">
+          <div className="flex items-center gap-1.5 font-bold text-indigo-900 mb-1.5 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+            <span>Hướng dẫn giải chi tiết:</span>
+          </div>
+          {question.explanation && (
+            <div className="text-slate-700 leading-relaxed">
+              <MathFormula text={question.explanation} allowRunCode={allowRunCode} />
+            </div>
+          )}
+          {question.options.some((o) => o.explanation) && (
+            <div className="mt-2.5 space-y-1.5 pt-2 border-t border-indigo-200/70">
+              {question.options.map((opt) =>
+                opt.explanation ? (
+                  <div key={opt.id} className="text-slate-700 leading-relaxed pl-2.5 border-l-2 border-indigo-500 py-0.5">
+                    <span className="font-bold text-indigo-950">
+                      Ý {opt.display_label}) ({opt.is_correct ? 'ĐÚNG' : 'SAI'}):{' '}
+                    </span>
+                    <MathFormula text={opt.explanation} allowRunCode={allowRunCode} />
+                  </div>
+                ) : null
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

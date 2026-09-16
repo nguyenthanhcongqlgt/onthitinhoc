@@ -66,6 +66,8 @@ export interface QuestionOptionMasked {
   display_label: string;
   content: string;
   code_snippet?: string;
+  is_correct?: boolean;
+  explanation?: string;
 }
 
 export interface QuestionMasked {
@@ -79,6 +81,7 @@ export interface QuestionMasked {
   code_language: string;
   competency_category: string;
   difficulty_level: Difficulty;
+  explanation?: string;
   options: QuestionOptionMasked[];
 }
 
@@ -191,6 +194,7 @@ export interface SittingAssignment {
 
 export interface ExamStartPayload {
   session_id: number;
+  is_preview?: boolean;
   start_time: string;
   selected_branch: 'NONE' | 'CS' | 'ICT' | 'BOTH';
   violation_count: number;

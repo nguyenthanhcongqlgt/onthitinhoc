@@ -13,6 +13,7 @@ from .views import (
     AITestConnectionView,
     AISolveExamView,
     ExamAnalyticsView,
+    ExamPreviewView,
     QuestionFeedbackViewSet,
     ExamSittingViewSet,
     ExamFolderViewSet
@@ -34,6 +35,7 @@ urlpatterns = [
     path('exams/ai-test-connection/', AITestConnectionView.as_view(), name='ai_test_connection'),
     path('exams/ai-solve/', AISolveExamView.as_view(), name='ai_solve_exam'),
     path('exams/<int:exam_id>/analytics/', ExamAnalyticsView.as_view(), name='exam_analytics'),
+    path('exams/<int:exam_id>/preview/', ExamPreviewView.as_view(), name='exam_preview'),
     path('exams/<int:exam_id>/verify-code/', VerifyAccessCodeView.as_view(), name='verify_access_code'),
     path('exams/quick-join/', QuickJoinExamView.as_view(), name='quick_join_exam'),
     path('', include(router.urls)),

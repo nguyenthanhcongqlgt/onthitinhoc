@@ -1233,6 +1233,17 @@ export const TeacherDashboard: React.FC = () => {
                             {/* Bottom Action Bar */}
                             <div className="border-t border-slate-800/80 pt-3 flex items-center justify-between gap-2">
                               <div className="flex items-center gap-1.5 flex-wrap">
+                                {/* Preview Exam Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => window.open(`/exam/${exam.id}?preview=true`, '_blank')}
+                                  className="flex items-center gap-1.5 rounded-xl border border-emerald-600/50 bg-emerald-950/40 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-900/60 hover:text-white transition-all shadow-sm"
+                                  title="Xem trước giao diện phòng thi của học sinh"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-emerald-400" />
+                                  <span>Xem trước</span>
+                                </button>
+
                                 {canEditOrDelete ? (
                                   <>
                                     <button

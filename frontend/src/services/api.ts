@@ -169,6 +169,10 @@ export const examsApi = {
     const res = await apiClient.get(`/exams/${examId}/`);
     return res.data;
   },
+  previewExam: async (examId: number): Promise<ExamStartPayload> => {
+    const res = await apiClient.get(`/exams/${examId}/preview/`);
+    return res.data;
+  },
   verifyAccessCode: async (examId: number, code: string) => {
     const res = await apiClient.post(`/exams/${examId}/verify-code/`, { access_code: code });
     return res.data;

@@ -15,6 +15,7 @@ interface QuestionCardPart1Props {
   onToggleEliminate?: (questionId: number, optionId: number) => void;
   fontSize?: 'sm' | 'md' | 'lg';
   allowRunCode?: boolean;
+  showAnswerKey?: boolean;
 }
 
 export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
@@ -28,6 +29,7 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
   onToggleEliminate,
   fontSize = 'md',
   allowRunCode = true,
+  showAnswerKey = false,
 }) => {
   const contentFontClass =
     fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg leading-relaxed' : 'text-base';
@@ -122,6 +124,7 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
         {question.options.map((option) => {
           const isSelected = selectedOptionId === option.id;
           const isEliminated = eliminatedOptionIds.includes(option.id);
+          const isCorrect = showAnswerKey && option.is_correct === true;
 
           return (
             <div
@@ -143,7 +146,9 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
                 }
               }}
               className={`group flex cursor-pointer items-start gap-3 rounded-2xl border p-3 transition-all sm:p-4 ${
-                isEliminated
+                isCorrect
+                  ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/50 shadow-sm'
+                  : isEliminated
                   ? 'border-slate-200 bg-slate-50 text-slate-400 opacity-70'
                   : isSelected
                   ? 'border-blue-400 bg-blue-50/50 ring-1 ring-blue-400 shadow-sm'
@@ -152,7 +157,9 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
             >
               <span
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl font-bold text-xs transition-all ${
-                  isEliminated
+                  isCorrect
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : isEliminated
                     ? 'bg-slate-200 text-slate-400 line-through'
                     : isSelected
                     ? 'bg-blue-600 text-white shadow-md'
@@ -175,6 +182,13 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
               </div>
 
               <div className="flex items-center gap-2 shrink-0 self-center">
+                {isCorrect && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-300 shadow-xs">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Đáp án đúng</span>
+                  </span>
+                )}
+
                 {/* Strike-through / Elimination Toggle Button */}
                 {onToggleEliminate && (
                   <button
@@ -194,7 +208,7 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
                   </button>
                 )}
 
-                {isSelected && !isEliminated && (
+                {isSelected && !isEliminated && !isCorrect && (
                   <CheckCircle2 className="h-5 w-5 text-blue-600 shrink-0" />
                 )}
               </div>
@@ -202,6 +216,33 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
           );
         })}
       </div>
+
+      {/* Teacher Answer Key / Explanation */}
+      {showAnswerKey && (question.explanation || question.options.some((o) => o.explanation)) && (
+        <div className="mt-5 p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 text-slate-800 text-xs shadow-xs">
+          <div className="flex items-center gap-1.5 font-bold text-emerald-900 mb-1.5 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <span>Hướng dẫn giải chi tiết:</span>
+          </div>
+          {question.explanation && (
+            <div className="text-slate-700 leading-relaxed">
+              <MathFormula text={question.explanation} allowRunCode={allowRunCode} />
+            </div>
+          )}
+          {question.options.some((o) => o.explanation) && (
+            <div className="mt-2.5 space-y-1.5 pt-2 border-t border-emerald-200/70">
+              {question.options.map((opt) =>
+                opt.explanation ? (
+                  <div key={opt.id} className="text-slate-700 leading-relaxed pl-2.5 border-l-2 border-emerald-500 py-0.5">
+                    <span className="font-bold text-emerald-950">{opt.display_label}: </span>
+                    <MathFormula text={opt.explanation} allowRunCode={allowRunCode} />
+                  </div>
+                ) : null
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

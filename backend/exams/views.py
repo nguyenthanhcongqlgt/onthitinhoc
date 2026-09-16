@@ -1161,6 +1161,77 @@ class AISolveExamView(APIView):
                 'error': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
+class ExamPreviewView(APIView):
+    """
+    Teacher/Admin Exam Preview API:
+    Renders the exact student-facing payload (with options, KaTeX, IDE code snippets)
+    without creating a DB ExamSession, without anti-cheat enforcement,
+    and enriches with is_correct & explanation for teacher inspection.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, exam_id):
+        from django.utils import timezone
+        user = request.user
+        if not (user.is_superuser or user.role in [User.Role.ADMIN, User.Role.TEACHER]):
+            return Response(
+                {"detail": "Chỉ có Giáo viên hoặc Quản trị viên mới có quyền xem trước đề thi."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        exam = get_object_or_404(Exam, id=exam_id)
+
+        # Teachers can view if creator, admin, or shared
+        if not (user.is_superuser or user.role == User.Role.ADMIN or exam.creator == user or exam.shared_teachers.filter(id=user.id).exists() or exam.is_shared_with_all_teachers):
+            return Response(
+                {"detail": "Bạn không có quyền xem trước đề thi này."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Prepare exact student exam payload
+        payload = ExamSecurityService.prepare_exam_payload_for_student(
+            exam=exam,
+            session_id=0,
+            user_id=user.id
+        )
+
+        # Enrich options with is_correct and explanations for teacher inspection!
+        q_map = {q.id: q for q in exam.questions.prefetch_related('options').all()}
+        opt_map = {}
+        for q in q_map.values():
+            for opt in q.options.all():
+                opt_map[opt.id] = opt
+
+        def enrich_question(q_dict):
+            qid = q_dict.get('id')
+            orig_q = q_map.get(qid)
+            if orig_q:
+                q_dict['explanation'] = orig_q.explanation
+                for opt_dict in q_dict.get('options', []):
+                    oid = opt_dict.get('id')
+                    orig_opt = opt_map.get(oid)
+                    if orig_opt:
+                        opt_dict['is_correct'] = orig_opt.is_correct
+                        opt_dict['explanation'] = orig_opt.explanation
+
+        for q in payload.get('part1_questions', []):
+            enrich_question(q)
+        for q in payload.get('part2_common_questions', []):
+            enrich_question(q)
+        for branch_key in ['CS', 'ICT']:
+            for q in payload.get('part2_branches', {}).get(branch_key, []):
+                enrich_question(q)
+
+        return Response({
+            'session_id': 0,
+            'is_preview': True,
+            'start_time': timezone.now().isoformat(),
+            'selected_branch': 'BOTH' if exam.branch_mode == Exam.BranchMode.BOTH else 'NONE',
+            'violation_count': 0,
+            'max_tab_violations': exam.max_tab_violations,
+            'data': payload
+        }, status=status.HTTP_200_OK)
+
 
 
 class ExamAnalyticsView(APIView):
