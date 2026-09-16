@@ -16,7 +16,7 @@ class AISolverEngine:
     """
 
     PROVIDER_DEFAULT_MODELS = {
-        'gemini': 'gemini-3.7-flash',
+        'gemini': 'gemini-3.6-flash',
         'openai': 'gpt-4o-mini',
         'deepseek': 'deepseek-chat',
         'claude': 'claude-3-7-sonnet-20250219',
@@ -25,16 +25,12 @@ class AISolverEngine:
 
     PROVIDER_FALLBACK_MODELS = {
         'gemini': [
-            'gemini-3.7-flash',       # Ưu tiên 1: Đỉnh cao suy luận & Mới nhất
-            'gemini-3.6-flash',       # Ưu tiên 2: Thế hệ 3.6 cao cấp
-            'gemini-3.5-flash-lite',  # Dự phòng Hạn mức Khủng: 500 RPD, 15 RPM, Siêu tốc
+            'gemini-3.6-flash',       # Ưu tiên 1: Tốc độ cao, ổn định 100%, không bị 503
+            'gemini-3.5-flash-lite',  # Ưu tiên 2: Hạn mức khủng 500 RPD, 15 RPM, siêu tốc
             'gemini-3.1-flash-lite',  # Dự phòng 500 RPD
-            'gemini-2.5-flash',
+            'gemini-3.7-flash',       # Dự phòng khi Google hết quá tải
             'gemini-3.5-flash',
-            'gemini-3-flash',
-            'gemini-2.5-flash-lite',
-            'gemini-2.0-flash',
-            'gemini-1.5-flash'
+            'gemini-3.8-flash',
         ],
         'openai': [
             'gpt-4o-mini',
@@ -387,7 +383,7 @@ HƯỚNG DẪN GIẢI QUYẾT:
         max_tokens: int = 4096
     ) -> str:
         headers = {'Content-Type': 'application/json'}
-        timeout = 60
+        timeout = 25
         api_key_clean = (api_key or '').strip()
 
         if provider == 'gemini':
