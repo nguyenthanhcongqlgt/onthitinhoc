@@ -711,18 +711,49 @@ class DocxExamParser:
     @classmethod
     def _is_answer_table(cls, tbl: docx.table.Table) -> bool:
         rows = tbl.rows
-        if len(rows) < 2:
+        if len(rows) < 1:
             return False
         all_cell_texts = [[c.text.strip() for c in r.cells] for r in rows]
+
+        # 1. Part I answer table: Horizontal row pairs (Row 1: Câu 1 2 3... Row 2: ĐA A D B...)
         for r_idx in range(len(rows) - 1):
             r1 = all_cell_texts[r_idx]
             r2 = all_cell_texts[r_idx + 1]
-            cau_count = sum(1 for c in r1 if re.search(r'^(?:Câu\s*\d+|\d+)$', c, re.IGNORECASE))
+            cau_count = sum(1 for c in r1 if re.search(r'^(?:Câu\s*)?\d+$', c, re.IGNORECASE))
             ans_count = sum(1 for c in r2 if re.search(r'^[A-D]$', c, re.IGNORECASE))
             if cau_count >= 2 and ans_count >= 2:
                 return True
-            if any('đáp án' in c.lower() for c in r1) or any('bảng đáp án' in c.lower() for c in r1):
+            has_da_keyword = any(re.search(r'\b(?:đáp\s*án|bảng\s*đáp\s*án|đ/a|đa)\b', c, re.IGNORECASE) for c in r1)
+            if has_da_keyword and ans_count >= 2:
                 return True
+
+        # 2. Part I answer table: Vertical column pairs (Col 0: Câu 1 2..., Col 1: A B C...)
+        num_cols = max(len(r) for r in all_cell_texts)
+        for c_idx in range(0, num_cols - 1, 2):
+            col1_nums = 0
+            col2_ans = 0
+            for r in all_cell_texts:
+                if c_idx < len(r) and c_idx + 1 < len(r):
+                    if re.search(r'^(?:Câu\s*)?\d+$', r[c_idx], re.IGNORECASE):
+                        col1_nums += 1
+                    if re.search(r'^[A-D]$', r[c_idx + 1], re.IGNORECASE):
+                        col2_ans += 1
+            if col1_nums >= 2 and col2_ans >= 2:
+                return True
+
+        # 3. Part II answer table (Header: Câu hỏi | Ý a) | Ý b) | Ý c) | Ý d))
+        for r1 in all_cell_texts:
+            has_sub_headers = sum(1 for c in r1 if re.search(r'^(?:Ý\s*)?[a-d]\)?$', c, re.IGNORECASE)) >= 3
+            if has_sub_headers:
+                return True
+
+        # 4. Part II answer rows (Rows: Câu 1 | S | S | S | Đ)
+        for r in all_cell_texts:
+            if len(r) >= 5 and re.search(r'^(?:Câu\s*(?:hỏi\s*)?)?\d+$', r[0], re.IGNORECASE):
+                tf_count = sum(1 for c in r[1:5] if re.search(r'^(?:Đ|S|Đúng|Sai|Dung|True|False|T|F|\+|\-)$', c, re.IGNORECASE))
+                if tf_count >= 3:
+                    return True
+
         return False
 
     @classmethod
@@ -944,45 +975,102 @@ class DocxExamParser:
     def _extract_answer_tables(cls, tables) -> Dict[str, Any]:
         """
         Extracts answers from Answer Key Tables at the end of the document.
+        Supports both Part I (multi-row table pairs, vertical columns)
+        and Part II (True/False matrix table Ý a) Ý b)... and cell fallbacks).
         """
         p1_keys: Dict[int, str] = {}
         p2_branch_keys: Dict[int, Dict[str, bool]] = {}
 
+        is_tf = lambda s: bool(re.match(r'^(?:Đ|S|Đúng|Sai|Dung|True|False|T|F|\+|\-)$', s.strip(), re.IGNORECASE))
+        to_bool = lambda s: bool(re.match(r'^(?:Đ|Đúng|Dung|True|T|\+)$', s.strip(), re.IGNORECASE))
+
         for table in tables:
             rows = table.rows
-            if len(rows) < 2: continue
+            if len(rows) < 1: continue
+            grid = [[c.text.strip() for c in r.cells] for r in rows]
 
-            all_cell_texts = [[c.text.strip() for c in r.cells] for r in rows]
+            # 1. Part II Matrix Table (Image 2 format)
+            # Identify sub-item column map if any header row exists
+            col_map = {}
+            for r in grid:
+                for c_idx, txt in enumerate(r):
+                    m = re.search(r'^(?:Ý\s*)?([a-d])\)?$', txt, re.IGNORECASE)
+                    if m:
+                        col_map[c_idx] = m.group(1).lower()
 
-            # Check if this is a Part I table (Row 0: Câu 1 2 3... Row 1: Chọn B D C...)
-            for r_idx in range(0, len(rows) - 1, 2):
-                header_row = all_cell_texts[r_idx]
-                val_row = all_cell_texts[r_idx + 1]
+            for r in grid:
+                if len(r) < 2: continue
+                q_m = re.search(r'^(?:Câu\s*(?:hỏi\s*)?)?(\d+)[:\.]?$', r[0], re.IGNORECASE)
+                if q_m:
+                    q_num = int(q_m.group(1))
+                    tf_cells = {}
+                    for c_idx in range(1, len(r)):
+                        val = r[c_idx]
+                        if is_tf(val):
+                            lbl = col_map.get(c_idx)
+                            if not lbl:
+                                order_lbls = ['a', 'b', 'c', 'd']
+                                if c_idx - 1 < len(order_lbls):
+                                    lbl = order_lbls[c_idx - 1]
+                            if lbl:
+                                tf_cells[lbl] = to_bool(val)
+                    if len(tf_cells) >= 2:
+                        p2_branch_keys[q_num] = tf_cells
 
-                if any('Câu' in c for c in header_row) and any(re.search(r'^[A-D]$', c, re.IGNORECASE) for c in val_row):
-                    for c_idx in range(len(header_row)):
-                        q_str = header_row[c_idx]
-                        v_str = val_row[c_idx] if c_idx < len(val_row) else ''
-                        q_match = re.search(r'(\d+)', q_str)
-                        v_match = re.search(r'([A-D])', v_str, re.IGNORECASE)
-                        if q_match and v_match:
-                            q_num = int(q_match.group(1))
-                            p1_keys[q_num] = v_match.group(1).upper()
+            # 2. Part II Cell-level fallback: e.g. a) Đúng \n b) Sai
+            for r in grid:
+                for c_idx, cell_text in enumerate(r):
+                    if re.search(r'[a-d]\)\s*(?:Đúng|Sai|Dung|Đ|S)', cell_text, re.IGNORECASE):
+                        q_m = re.search(r'(\d+)', r[0]) if r else None
+                        if q_m:
+                            q_num = int(q_m.group(1))
+                            sub_dict = {}
+                            for line in cell_text.split('\n'):
+                                m = re.search(r'([a-d])\)\s*(Đúng|Sai|Dung|Đ|S)', line, re.IGNORECASE)
+                                if m:
+                                    sub_dict[m.group(1).lower()] = to_bool(m.group(2))
+                            if sub_dict:
+                                p2_branch_keys[q_num] = sub_dict
 
-            # Check Part II table
-            for row in rows:
-                for c_idx, cell in enumerate(row.cells):
-                    c_text = cell.text.strip()
-                    if re.search(r'[a-d]\)\s*(Đúng|Sai|Dung|Đ|S)', c_text, re.IGNORECASE):
-                        sub_dict = {}
-                        for line in c_text.split('\n'):
-                            m = re.search(r'([a-d])\)\s*(Đúng|Sai|Dung|Đ|S)', line, re.IGNORECASE)
-                            if m:
-                                label = m.group(1).lower()
-                                is_true = bool(re.search(r'Đúng|Dung|Đ', m.group(2), re.IGNORECASE))
-                                sub_dict[label] = is_true
-                        if sub_dict:
-                            p2_branch_keys[c_idx] = sub_dict
+            # 3. Part I Horizontal Row Pairs (Image 1 format)
+            r_idx = 0
+            while r_idx < len(grid) - 1:
+                r1 = grid[r_idx]
+                r2 = grid[r_idx + 1]
+
+                cau_cells = [c for c in r1 if re.search(r'^(?:Câu\s*)?\d+$', c, re.IGNORECASE)]
+                ans_cells = [c for c in r2 if re.search(r'^[A-D]$', c, re.IGNORECASE)]
+
+                if len(cau_cells) >= 2 and len(ans_cells) >= 2:
+                    for c_idx in range(min(len(r1), len(r2))):
+                        q_str = r1[c_idx]
+                        a_str = r2[c_idx]
+                        qm = re.search(r'(\d+)', q_str)
+                        am = re.search(r'([A-Da-d])', a_str)
+                        if qm and am:
+                            p1_keys[int(qm.group(1))] = am.group(1).upper()
+                    r_idx += 2
+                    continue
+                r_idx += 1
+
+            # 4. Part I Vertical Column Pairs (Col 0: Câu 1 2..., Col 1: A B C...)
+            max_cols = max(len(r) for r in grid)
+            for c_idx in range(0, max_cols - 1, 2):
+                col1_nums = 0
+                col2_ans = 0
+                for r in grid:
+                    if c_idx < len(r) and c_idx + 1 < len(r):
+                        if re.search(r'^(?:Câu\s*)?\d+$', r[c_idx], re.IGNORECASE):
+                            col1_nums += 1
+                        if re.search(r'^[A-D]$', r[c_idx + 1], re.IGNORECASE):
+                            col2_ans += 1
+                if col1_nums >= 2 and col2_ans >= 2:
+                    for r in grid:
+                        if c_idx < len(r) and c_idx + 1 < len(r):
+                            qm = re.search(r'(\d+)', r[c_idx])
+                            am = re.search(r'([A-Da-d])', r[c_idx + 1])
+                            if qm and am:
+                                p1_keys[int(qm.group(1))] = am.group(1).upper()
 
         return {
             'part1_keys': p1_keys,
@@ -993,20 +1081,56 @@ class DocxExamParser:
     def _apply_table_answer_keys(cls, parsed: Dict[str, Any], table_keys: Dict[str, Any]):
         """
         Backfills question options from table keys if not already marked.
+        Supports both Part I and Part II questions with flexible numbering matching.
         """
         p1_keys = table_keys.get('part1_keys', {})
-        if not p1_keys: return
+        p2_branch_keys = table_keys.get('p2_branch_keys', {})
+        if not p1_keys and not p2_branch_keys:
+            return
 
-        for q in parsed.get('questions', []):
-            if q['part_type'] == 'PART_I':
-                q_num = q['order_index']
-                if q_num in p1_keys:
-                    correct_label = p1_keys[q_num]
-                    has_marked = any(opt['is_correct'] for opt in q['options'])
+        p1_questions = [q for q in parsed.get('questions', []) if q.get('part_type') == 'PART_I']
+        p2_questions = [q for q in parsed.get('questions', []) if q.get('part_type') == 'PART_II']
+
+        # Apply Part I table keys
+        if p1_keys:
+            for p1_idx, q in enumerate(p1_questions):
+                candidates = [q.get('raw_number'), q.get('order_index'), p1_idx + 1]
+                correct_label = None
+                for cand in candidates:
+                    if cand is not None and cand in p1_keys:
+                        correct_label = p1_keys[cand]
+                        break
+
+                if correct_label:
+                    has_marked = any(opt.get('is_correct') for opt in q.get('options', []))
                     if not has_marked:
-                        for opt in q['options']:
-                            if opt['label'].upper() == correct_label:
+                        for opt in q.get('options', []):
+                            if opt.get('label', '').upper() == correct_label.upper():
                                 opt['is_correct'] = True
+
+        # Apply Part II table keys
+        if p2_branch_keys:
+            for p2_idx, q in enumerate(p2_questions):
+                candidates = [
+                    q.get('raw_number'),
+                    q.get('order_index'),
+                    p2_idx + 1,
+                    len(p1_questions) + p2_idx + 1
+                ]
+                sub_map = None
+                for cand in candidates:
+                    if cand is not None and cand in p2_branch_keys:
+                        sub_map = p2_branch_keys[cand]
+                        break
+
+                if sub_map:
+                    has_inline = q.get('has_inline_key', False)
+                    has_marked = any(opt.get('is_correct') for opt in q.get('options', []))
+                    if not has_inline or not has_marked:
+                        for opt in q.get('options', []):
+                            lbl = opt.get('label', '').lower()
+                            if lbl in sub_map:
+                                opt['is_correct'] = bool(sub_map[lbl])
 
     @classmethod
     def parse_raw_text(cls, text: str) -> Dict[str, Any]:
@@ -1020,17 +1144,38 @@ class DocxExamParser:
             'description': ''
         }
 
-        # 1. Separate Main Exam content from Footer (e.g. ---HẾT--- and Bảng đáp án)
+        # 1. Separate Main Exam content from Footer (e.g. ---HẾT---, HƯỚNG DẪN CHẤM, Bảng đáp án...)
         exam_body = text
         footer_text = ""
 
-        het_match = re.search(r'(-{3,}\s*(HẾT|HET)\s*-{3,}|Bảng\s+đáp\s+án|BẢNG\s+ĐÁP\s+ÁN)', text, re.IGNORECASE)
+        het_pattern = re.compile(
+            r'(?:-{3,}\s*(?:HẾT|HET)\s*-{3,}'
+            r'|^\s*(?:-{3,}\s*)?(?:HẾT|HET)\s*(?:-{3,})?$'
+            r'|^\s*(?:BẢNG\s+)?ĐÁP\s+ÁN(?:\s+VÀ\s+THANG\s+ĐIỂM|\s+VÀ\s+HƯỚNG\s+DẪN\s+CHẤM|\s+CHI\s+TIẾT|\s+THAM\s+KHẢO)?\s*[:\.]?$'
+            r'|^\s*HƯỚNG\s+DẪN\s+(?:CHẤM|GIẢI)(?:\s+VÀ\s+BIỂU\s+ĐIỂM|\s+CHI\s+TIẾT)?\s*[:\.]?$'
+            r'|BẢNG\s+ĐÁP\s+ÁN'
+            r'|BẢNG\s+TRẢ\s+LỜI'
+            r')',
+            re.IGNORECASE | re.MULTILINE
+        )
+        het_match = het_pattern.search(text)
         if het_match:
             split_idx = het_match.start()
             exam_body = text[:split_idx]
             footer_text = text[split_idx:]
+        else:
+            # Fallback: check if an answer table starts near the bottom of text
+            tbl_start_m = re.search(
+                r'(\n\s*(?:(?:BẢNG\s+)?ĐÁP\s+ÁN|HƯỚNG\s+DẪN\s+CHẤM|Câu\s*(?:hỏi)?[\t|]\s*(?:1|Ý\s*[a-d])|Câu[\t\s]+1[\t\s]+2[\t\s]+3))',
+                text,
+                re.IGNORECASE
+            )
+            if tbl_start_m:
+                split_idx = tbl_start_m.start(1)
+                exam_body = text[:split_idx]
+                footer_text = text[split_idx:]
 
-        # Extract answer keys from Footer (Azota format: 1A 2B 3C or Câu 4: a)Đ b)S c)S d)Đ)
+        # Extract answer keys from Footer (Azota inline, Part I tabular pairs, Part II matrix table)
         footer_p1_keys, footer_p2_keys = cls._parse_azota_footer_keys(footer_text)
 
         # 2. Parse Metadata Tags
@@ -1147,20 +1292,49 @@ class DocxExamParser:
         parsed_questions.extend(p2_ict_questions)
 
         # Apply Footer Keys if any question is missing key
-        for q in parsed_questions:
-            q_num = q['order_index']
-            if q['part_type'] == 'PART_I' and q_num in footer_p1_keys:
-                if not any(opt['is_correct'] for opt in q['options']):
-                    for opt in q['options']:
-                        if opt['label'].upper() == footer_p1_keys[q_num]:
-                            opt['is_correct'] = True
-            elif q['part_type'] == 'PART_II' and q_num in footer_p2_keys:
-                # Sub-item boolean map
-                sub_map = footer_p2_keys[q_num]
-                for opt in q['options']:
-                    opt_lbl = opt['label'].lower()
-                    if opt_lbl in sub_map:
-                        opt['is_correct'] = sub_map[opt_lbl]
+        if footer_p1_keys:
+            for p1_idx, q in enumerate(p1_questions):
+                candidates = [q.get('raw_number'), q.get('order_index'), p1_idx + 1]
+                correct_label = None
+                for cand in candidates:
+                    if cand is not None and cand in footer_p1_keys:
+                        correct_label = footer_p1_keys[cand]
+                        break
+
+                if correct_label:
+                    has_marked = any(opt.get('is_correct') for opt in q.get('options', []))
+                    if not has_marked:
+                        for opt in q.get('options', []):
+                            if opt.get('label', '').upper() == correct_label.upper():
+                                opt['is_correct'] = True
+
+        if footer_p2_keys:
+            all_p2 = p2_common_questions + p2_cs_questions + p2_ict_questions
+            for p2_idx, q in enumerate(all_p2):
+                candidates = [
+                    q.get('raw_number'),
+                    q.get('order_index'),
+                    p2_idx + 1,
+                    len(p1_questions) + p2_idx + 1
+                ]
+                sub_map = None
+                for cand in candidates:
+                    if cand is not None and cand in footer_p2_keys:
+                        sub_map = footer_p2_keys[cand]
+                        break
+
+                if sub_map:
+                    has_inline = q.get('has_inline_key', False)
+                    has_marked = any(opt.get('is_correct') for opt in q.get('options', []))
+                    if not has_inline or not has_marked:
+                        for opt in q.get('options', []):
+                            lbl = opt.get('label', '').lower()
+                            if lbl in sub_map:
+                                opt['is_correct'] = bool(sub_map[lbl])
+
+        # Clean up warnings for questions that were backfilled with correct answers
+        p1_with_correct = {q['order_index'] for q in p1_questions if any(opt.get('is_correct') for opt in q.get('options', []))}
+        warnings = [w for w in warnings if not any(f"Câu {q_idx} (Phần I) chưa đánh dấu" in w for q_idx in p1_with_correct)]
 
         # Auto-detect matrix_preset and points if not explicitly defined
         p1_count = len(p1_questions)
@@ -1221,38 +1395,165 @@ class DocxExamParser:
     @classmethod
     def _parse_azota_footer_keys(cls, footer_text: str) -> Tuple[Dict[int, str], Dict[int, Dict[str, bool]]]:
         """
-        Parses Azota footer answer format:
-        1A 2B 3C or 1.A 2.B 3.C
-        Câu 4: a)Đ b)S c)S d)Đ
-        Câu 5: a)Đ b)S c)S d)S
+        Parses Azota footer answer format & Tabular answer key formats:
+        - Part I Multi-row Table pairs (Image 1):
+            Câu   1   2   3 ...
+            ĐA    A   D   B ...
+        - Part II Matrix Table (Image 2):
+            Câu hỏi   Ý a)   Ý b)   Ý c)   Ý d)
+            Câu 1     S      S      S      Đ
+            Câu 2     Đ      S      Đ      Đ
+        - Azota inline: 1A 2B 3C or 1.A 2.B 3.C
+        - Azota Part II: Câu 4: a)Đ b)S c)S d)Đ or Câu 4: a)Dung b)Sai
         """
-        p1_keys = {}
-        p2_keys = {}
-        if not footer_text:
+        p1_keys: Dict[int, str] = {}
+        p2_keys: Dict[int, Dict[str, bool]] = {}
+        if not footer_text or not footer_text.strip():
             return p1_keys, p2_keys
 
-        # Part 1 keys: e.g. 1A 2B 3C or 1.A 2.B
-        p1_matches = re.finditer(r'(\d+)\s*[\.\:\-]?\s*([A-D])\b', footer_text, re.IGNORECASE)
-        for m in p1_matches:
-            q_num = int(m.group(1))
-            ans_char = m.group(2).upper()
-            p1_keys[q_num] = ans_char
+        lines = [l.strip() for l in footer_text.split('\n') if l.strip()]
 
-        # Part 2 keys: e.g. Câu 4: a)Đ b)S c)S d)Đ or Câu 4: a)Dung b)Sai
-        p2_lines = footer_text.split('\n')
-        for line in p2_lines:
+        is_tf = lambda s: bool(re.match(r'^(?:Đ|S|Đúng|Sai|Dung|True|False|T|F|\+|\-)$', s.strip(), re.IGNORECASE))
+        to_bool = lambda s: bool(re.match(r'^(?:Đ|Đúng|Dung|True|T|\+)$', s.strip(), re.IGNORECASE))
+
+        def split_cells(line: str):
+            if '|' in line:
+                parts = [p.strip() for p in line.split('|')]
+                if parts and parts[0] == '': parts = parts[1:]
+                if parts and parts[-1] == '': parts = parts[:-1]
+                return parts
+            elif '\t' in line:
+                return [p.strip() for p in line.split('\t')]
+            else:
+                m_p2 = re.match(
+                    r'^(?:Câu\s*(?:hỏi\s*)?)?(\d+)[:\.\s]+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)\s+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)\s+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)\s+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)$',
+                    line,
+                    re.IGNORECASE
+                )
+                if m_p2:
+                    return [m_p2.group(1), m_p2.group(2), m_p2.group(3), m_p2.group(4), m_p2.group(5)]
+                return re.split(r'\s{2,}', line)
+
+        # 1. Part II Matrix table rows (Image 2 format)
+        # Identify sub-item column map if any header line exists
+        col_map = {}
+        for line in lines:
+            c_list = split_cells(line)
+            for idx, txt in enumerate(c_list):
+                m = re.search(r'^(?:Ý\s*)?([a-d])\)?$', txt, re.IGNORECASE)
+                if m:
+                    col_map[idx] = m.group(1).lower()
+
+        for line in lines:
+            if line.startswith('|-') or line.startswith('| -') or re.match(r'^[\|\-\:\s]+$', line):
+                continue
+            cells = split_cells(line)
+            if len(cells) >= 5:
+                q_m = re.search(r'^(?:Câu\s*(?:hỏi\s*)?)?(\d+)[:\.]?$', cells[0], re.IGNORECASE)
+                if q_m and all(is_tf(c) for c in cells[1:5]):
+                    q_num = int(q_m.group(1))
+                    sub_dict = {}
+                    for c_idx in range(1, 5):
+                        lbl = col_map.get(c_idx)
+                        if not lbl:
+                            order_lbls = ['a', 'b', 'c', 'd']
+                            lbl = order_lbls[c_idx - 1]
+                        sub_dict[lbl] = to_bool(cells[c_idx])
+                    p2_keys[q_num] = sub_dict
+                    continue
+
+            # Check direct space/tab regex for Part II row e.g. 'Câu 1 S S S Đ'
+            m_p2 = re.match(
+                r'^(?:Câu\s*(?:hỏi\s*)?)?(\d+)[:\.\s\t|]+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)[\s\t|]+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)[\s\t|]+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)[\s\t|]+([ĐS]|Đúng|Sai|True|False|T|F|\+|\-)',
+                line,
+                re.IGNORECASE
+            )
+            if m_p2:
+                q_num = int(m_p2.group(1))
+                p2_keys[q_num] = {
+                    'a': to_bool(m_p2.group(2)),
+                    'b': to_bool(m_p2.group(3)),
+                    'c': to_bool(m_p2.group(4)),
+                    'd': to_bool(m_p2.group(5)),
+                }
+                continue
+
+            # 2. Existing Part II inline format: e.g. Câu 4: a)Đ b)S c)S d)Đ or Câu 4: a)Dung b)Sai
             q_match = re.search(r'Câu\s*(\d+)\s*:', line, re.IGNORECASE)
             if q_match:
                 q_num = int(q_match.group(1))
-                sub_matches = re.finditer(r'([a-d])\s*[\)\.\:]\s*(Đ|S|Đúng|Sai|Dung|True|False)', line, re.IGNORECASE)
-                sub_dict = {}
-                for sm in sub_matches:
-                    lbl = sm.group(1).lower()
-                    val_str = sm.group(2).lower()
-                    is_true = val_str in ['đ', 'đúng', 'dung', 'true']
-                    sub_dict[lbl] = is_true
-                if sub_dict:
+                sub_matches = list(re.finditer(r'([a-d])\s*[\)\.\:]\s*(Đ|S|Đúng|Sai|Dung|True|False)', line, re.IGNORECASE))
+                if sub_matches:
+                    sub_dict = {}
+                    for sm in sub_matches:
+                        lbl = sm.group(1).lower()
+                        sub_dict[lbl] = to_bool(sm.group(2))
                     p2_keys[q_num] = sub_dict
+
+        # 3. Part I Horizontal Row Pairs (Image 1 format)
+        i = 0
+        while i < len(lines) - 1:
+            line1 = lines[i]
+            line2 = lines[i + 1]
+
+            if line1.startswith('|-') or line1.startswith('| -') or re.match(r'^[\|\-\:\s]+$', line1):
+                i += 1
+                continue
+            if line2.startswith('|-') or line2.startswith('| -') or re.match(r'^[\|\-\:\s]+$', line2):
+                line2 = lines[i + 2] if i + 2 < len(lines) else ''
+
+            cells1 = split_cells(line1)
+            cells2 = split_cells(line2)
+
+            if len(cells1) <= 2 or len(cells2) <= 2:
+                tokens1 = line1.split()
+                tokens2 = line2.split()
+                nums1 = [int(t) for t in tokens1 if t.isdigit()]
+                lets2 = [t.upper() for t in tokens2 if re.match(r'^[A-Da-d]$', t)]
+                if len(nums1) >= 3 and len(nums1) == len(lets2):
+                    for q_num, ans in zip(nums1, lets2):
+                        p1_keys[q_num] = ans
+                    i += 2
+                    continue
+
+            has_num = sum(1 for c in cells1 if re.search(r'^(?:Câu\s*)?\d+$', c, re.IGNORECASE))
+            has_ans = sum(1 for c in cells2 if re.search(r'^[A-D]$', c, re.IGNORECASE))
+
+            if has_num >= 2 and has_ans >= 2:
+                for c1, c2 in zip(cells1, cells2):
+                    m1 = re.search(r'(\d+)', c1)
+                    m2 = re.search(r'([A-Da-d])', c2)
+                    if m1 and m2:
+                        p1_keys[int(m1.group(1))] = m2.group(1).upper()
+                i += 2
+                continue
+
+            i += 1
+
+        # 4. Part I Vertical Column Pairs (e.g. Câu 1 A / Câu 2 D)
+        for line in lines:
+            parts = [c.strip() for c in re.split(r'[\t|]|\s{2,}', line) if c.strip()]
+            if len(parts) >= 2:
+                for idx in range(0, len(parts) - 1, 2):
+                    m1 = re.match(r'^(?:Câu\s*)?(\d+)$', parts[idx], re.IGNORECASE)
+                    m2 = re.match(r'^([A-Da-d])$', parts[idx+1], re.IGNORECASE)
+                    if m1 and m2:
+                        p1_keys[int(m1.group(1))] = m2.group(1).upper()
+
+        # 5. Part I Existing Inline matches (e.g. 1A 2B 3C or 1.A 2.B)
+        for line in lines:
+            # Skip lines that are Part II questions or contain sub-item True/False markers
+            if re.search(r'[a-d]\s*[\)\.\:]\s*(?:Đ|S|Đúng|Sai|Dung|True|False)', line, re.IGNORECASE):
+                continue
+            p1_matches = re.finditer(
+                r'(?:^|(?<=\s)|(?<=\b))(\d+)\s*[\.\:\-]?\s*([A-D])\b(?!\s*[\)\.\:]\s*(?:Đ|S|Đúng|Sai))',
+                line,
+                re.IGNORECASE
+            )
+            for m in p1_matches:
+                q_num = int(m.group(1))
+                if q_num not in p1_keys:
+                    p1_keys[q_num] = m.group(2).upper()
 
         return p1_keys, p2_keys
 
@@ -1299,6 +1600,13 @@ class DocxExamParser:
         warnings: List[str]
     ) -> Dict[str, Any]:
         full_block_text = "\n".join(block)
+
+        # Check for original question number in first line of block: e.g. "Câu 1:", "Câu 25.", "[CAU 1]"
+        raw_number = None
+        if block:
+            m_num = re.search(r'^\s*(?:\[CAU\s*(\d+)\]|[Cc][âa]u\s*(\d+)[:\.])', block[0], re.IGNORECASE)
+            if m_num:
+                raw_number = int(m_num.group(1) or m_num.group(2))
 
         # Metadata tags: Competency, Difficulty & Point
         competency_category = 'PROG_BASIC'
@@ -1499,8 +1807,12 @@ class DocxExamParser:
 
         content_final = "\n".join([p.strip() for p in prompt_lines if p.strip()]).strip()
 
+        has_inline_key = any(opt.get('is_correct') for opt in options)
+
         return {
             'order_index': order_index,
+            'raw_number': raw_number,
+            'has_inline_key': has_inline_key,
             'part_type': part_type,
             'branch': branch,
             'point': point,
