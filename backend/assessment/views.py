@@ -238,15 +238,17 @@ class ExamSessionListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == User.Role.ADMIN or user.is_superuser:
-            return ExamSession.objects.all()
-        if user.role == User.Role.TEACHER:
+            qs = ExamSession.objects.all()
+        elif user.role == User.Role.TEACHER:
             from django.db.models import Q
-            return ExamSession.objects.filter(
+            qs = ExamSession.objects.filter(
                 Q(exam__creator=user) |
                 Q(exam__shared_teachers=user) |
                 Q(exam__is_shared_with_all_teachers=True)
             ).distinct()
-        return ExamSession.objects.filter(student=user)
+        else:
+            qs = ExamSession.objects.filter(student=user)
+        return qs.select_related('student', 'exam')
 
 
 class ExamSessionDetailView(generics.RetrieveAPIView):
@@ -256,15 +258,21 @@ class ExamSessionDetailView(generics.RetrieveAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.role == User.Role.ADMIN or user.is_superuser:
-            return ExamSession.objects.all()
-        if user.role == User.Role.TEACHER:
+            qs = ExamSession.objects.all()
+        elif user.role == User.Role.TEACHER:
             from django.db.models import Q
-            return ExamSession.objects.filter(
+            qs = ExamSession.objects.filter(
                 Q(exam__creator=user) |
                 Q(exam__shared_teachers=user) |
                 Q(exam__is_shared_with_all_teachers=True)
             ).distinct()
-        return ExamSession.objects.filter(student=user)
+        else:
+            qs = ExamSession.objects.filter(student=user)
+        return qs.select_related('student', 'exam').prefetch_related(
+            'answers__question',
+            'answers__selected_option',
+            'violations'
+        )
 
 
 class SimulateScoringView(APIView):

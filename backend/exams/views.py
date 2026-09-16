@@ -74,7 +74,7 @@ class ExamFolderViewSet(viewsets.ModelViewSet):
             else:
                 qs = qs.filter(parent_id=parent_param)
 
-        return qs.distinct().order_by('order_index', 'name')
+        return qs.select_related('creator', 'parent').distinct().order_by('order_index', 'name')
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user)
@@ -200,6 +200,10 @@ class ExamViewSet(viewsets.ModelViewSet):
                         qs = qs.filter(folder_id=folder_id)
                 else:
                     qs = qs.filter(folder_id=folder_id)
+
+        qs = qs.select_related('creator', 'folder').prefetch_related('shared_teachers')
+        if getattr(self, 'action', None) in ['retrieve', 'details_with_questions']:
+            qs = qs.prefetch_related('questions__options')
 
         return qs
 

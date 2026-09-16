@@ -3,8 +3,19 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from django.http import JsonResponse
+import time
+
+def health_check(request):
+    return JsonResponse({
+        "status": "ok",
+        "service": "onthitinhoc-backend",
+        "timestamp": int(time.time())
+    })
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/health/', health_check, name='health_check'),
     path('api/auth/', include('authentication.urls')),
     path('api/classes/', include('authentication.class_urls')),
     path('api/bank/', include('exams.bank_urls')),

@@ -64,6 +64,10 @@ class ExamFolder(models.Model):
         verbose_name = 'Thư mục đề thi'
         verbose_name_plural = 'Quản lý Thư mục đề thi'
         ordering = ['order_index', 'name']
+        indexes = [
+            models.Index(fields=['parent', 'order_index']),
+            models.Index(fields=['creator', 'is_shared']),
+        ]
 
     def __str__(self):
         return self.get_full_path()
@@ -234,6 +238,10 @@ class Exam(models.Model):
         verbose_name = 'Đề thi'
         verbose_name_plural = 'Danh sách Đề thi'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'is_assigned']),
+            models.Index(fields=['folder', 'is_active']),
+        ]
 
     def __str__(self):
         return f"{self.title} ({self.duration_minutes} phút)"
@@ -292,6 +300,10 @@ class Question(models.Model):
         verbose_name = 'Câu hỏi'
         verbose_name_plural = 'Ngân hàng Câu hỏi'
         ordering = ['part_type', 'branch', 'order_index']
+        indexes = [
+            models.Index(fields=['exam', 'part_type', 'order_index']),
+            models.Index(fields=['exam', 'branch']),
+        ]
 
     def __str__(self):
         return f"[{self.get_part_type_display()} - {self.get_branch_display()}] Câu {self.order_index}: {self.content[:60]}..."
@@ -310,6 +322,9 @@ class QuestionOption(models.Model):
         verbose_name = 'Phương án / Ý trả lời'
         verbose_name_plural = 'Danh sách Phương án'
         ordering = ['order_index']
+        indexes = [
+            models.Index(fields=['question', 'order_index']),
+        ]
 
     def __str__(self):
         return f"Ý {self.label}: {self.content[:40]} ({'ĐÚNG' if self.is_correct else 'SAI'})"

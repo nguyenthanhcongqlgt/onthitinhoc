@@ -1,19 +1,28 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { StudentDashboard } from './pages/StudentDashboard';
-import { ExamRoom } from './pages/ExamRoom';
-import { ExamResult } from './pages/ExamResult';
-import { TeacherDashboard } from './pages/TeacherDashboard';
-import { ExamCreator } from './pages/ExamCreator';
-import { NotFound } from './pages/NotFound';
-import { Forbidden } from './pages/Forbidden';
-import { ChangePassword } from './pages/ChangePassword';
-import { Home } from './pages/Home';
-import { CodePlayground } from './pages/CodePlayground';
+
+// Lazy load all pages for optimal code splitting & lightning-fast initial load
+const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.Register })));
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
+const ExamRoom = lazy(() => import('./pages/ExamRoom').then(m => ({ default: m.ExamRoom })));
+const ExamResult = lazy(() => import('./pages/ExamResult').then(m => ({ default: m.ExamResult })));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
+const ExamCreator = lazy(() => import('./pages/ExamCreator').then(m => ({ default: m.ExamCreator })));
+const CodePlayground = lazy(() => import('./pages/CodePlayground').then(m => ({ default: m.CodePlayground })));
+const ChangePassword = lazy(() => import('./pages/ChangePassword').then(m => ({ default: m.ChangePassword })));
+const Forbidden = lazy(() => import('./pages/Forbidden').then(m => ({ default: m.Forbidden })));
+const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
+
+const PageLoadingSpinner: React.FC = () => (
+  <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-slate-300">
+    <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent mb-4"></div>
+    <p className="text-sm text-slate-400 font-medium">Đang tải trang...</p>
+  </div>
+);
 
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -86,102 +95,104 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forbidden" element={<Forbidden />} />
+          <Suspense fallback={<PageLoadingSpinner />}>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forbidden" element={<Forbidden />} />
 
-            {/* Code Playground - Only for logged-in Users (Student, Teacher, Admin) */}
-            <Route
-              path="/playground"
-              element={
-                <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
-                  <CodePlayground />
-                </ProtectedRoute>
-              }
-            />
+              {/* Code Playground - Only for logged-in Users (Student, Teacher, Admin) */}
+              <Route
+                path="/playground"
+                element={
+                  <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
+                    <CodePlayground />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Account Settings / Change Password / Profile */}
-            <Route
-              path="/change-password"
-              element={
-                <ProtectedRoute>
-                  <ChangePassword />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ChangePassword />
-                </ProtectedRoute>
-              }
-            />
+              {/* Account Settings / Change Password / Profile */}
+              <Route
+                path="/change-password"
+                element={
+                  <ProtectedRoute>
+                    <ChangePassword />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ChangePassword />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Student Dashboard */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
-                  <StudentDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Student Dashboard */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Exam Room */}
-            <Route
-              path="/exam/:examId"
-              element={
-                <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
-                  <ExamRoom />
-                </ProtectedRoute>
-              }
-            />
+              {/* Exam Room */}
+              <Route
+                path="/exam/:examId"
+                element={
+                  <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
+                    <ExamRoom />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Exam Result & Breakdown */}
-            <Route
-              path="/result/:sessionId"
-              element={
-                <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
-                  <ExamResult />
-                </ProtectedRoute>
-              }
-            />
+              {/* Exam Result & Breakdown */}
+              <Route
+                path="/result/:sessionId"
+                element={
+                  <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
+                    <ExamResult />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Teacher Dashboard */}
-            <Route
-              path="/teacher"
-              element={
-                <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-                  <TeacherDashboard />
-                </ProtectedRoute>
-              }
-            />
+              {/* Teacher Dashboard */}
+              <Route
+                path="/teacher"
+                element={
+                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                    <TeacherDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* Exam Creator */}
-            <Route
-              path="/teacher/create-exam"
-              element={
-                <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-                  <ExamCreator />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/exam-creator"
-              element={
-                <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-                  <ExamCreator />
-                </ProtectedRoute>
-              }
-            />
+              {/* Exam Creator */}
+              <Route
+                path="/teacher/create-exam"
+                element={
+                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                    <ExamCreator />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/exam-creator"
+                element={
+                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                    <ExamCreator />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* 404 — Trang không tồn tại */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* 404 — Trang không tồn tại */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>

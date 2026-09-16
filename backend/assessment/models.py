@@ -69,6 +69,10 @@ class ExamSession(models.Model):
         verbose_name = 'Phiên làm bài thi'
         verbose_name_plural = 'Danh sách Phiên thi'
         ordering = ['-start_time']
+        indexes = [
+            models.Index(fields=['student', 'exam', 'status']),
+            models.Index(fields=['exam', 'status']),
+        ]
 
     def __str__(self):
         return f"{self.student.full_name or self.student.username} - {self.exam.title} ({self.total_score}đ - {self.get_status_display()})"
@@ -101,6 +105,9 @@ class StudentAnswer(models.Model):
         verbose_name = 'Câu trả lời của thí sinh'
         verbose_name_plural = 'Chi tiết Câu trả lời'
         unique_together = ('session', 'question')
+        indexes = [
+            models.Index(fields=['session', 'question']),
+        ]
 
     def __str__(self):
         return f"Session {self.session.id} - Q{self.question.id} ({self.score_awarded}đ)"
@@ -124,6 +131,9 @@ class ViolationLog(models.Model):
         verbose_name = 'Nhật ký Vi phạm'
         verbose_name_plural = 'Nhật ký Vi phạm thi cử'
         ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['session', 'timestamp']),
+        ]
 
     def __str__(self):
         return f"Session {self.session.id} - {self.get_violation_type_display()} (Lần {self.violation_number})"
