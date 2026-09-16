@@ -1041,7 +1041,7 @@ class DocxExamParser:
                 cau_cells = [c for c in r1 if re.search(r'^(?:Câu\s*)?\d+$', c, re.IGNORECASE)]
                 ans_cells = [c for c in r2 if re.search(r'^[A-D]$', c, re.IGNORECASE)]
 
-                if len(cau_cells) >= 2 and len(ans_cells) >= 2:
+                if len(cau_cells) >= 1 and len(ans_cells) >= 1:
                     for c_idx in range(min(len(r1), len(r2))):
                         q_str = r1[c_idx]
                         a_str = r2[c_idx]
@@ -1292,6 +1292,9 @@ class DocxExamParser:
         parsed_questions.extend(p2_ict_questions)
 
         # Apply Footer Keys if any question is missing key
+        p1_questions = [q for q in parsed_questions if q.get('part_type') == 'PART_I']
+        p2_questions = [q for q in parsed_questions if q.get('part_type') == 'PART_II']
+
         if footer_p1_keys:
             for p1_idx, q in enumerate(p1_questions):
                 candidates = [q.get('raw_number'), q.get('order_index'), p1_idx + 1]
@@ -1309,8 +1312,7 @@ class DocxExamParser:
                                 opt['is_correct'] = True
 
         if footer_p2_keys:
-            all_p2 = p2_common_questions + p2_cs_questions + p2_ict_questions
-            for p2_idx, q in enumerate(all_p2):
+            for p2_idx, q in enumerate(p2_questions):
                 candidates = [
                     q.get('raw_number'),
                     q.get('order_index'),
@@ -1519,7 +1521,7 @@ class DocxExamParser:
             has_num = sum(1 for c in cells1 if re.search(r'^(?:Câu\s*)?\d+$', c, re.IGNORECASE))
             has_ans = sum(1 for c in cells2 if re.search(r'^[A-D]$', c, re.IGNORECASE))
 
-            if has_num >= 2 and has_ans >= 2:
+            if has_num >= 1 and has_ans >= 1:
                 for c1, c2 in zip(cells1, cells2):
                     m1 = re.search(r'(\d+)', c1)
                     m2 = re.search(r'([A-Da-d])', c2)
@@ -1660,13 +1662,33 @@ class DocxExamParser:
         options = []
         raw_prompt_text = ""
 
+        # Smart Part-Type Auto-Detection:
+        # If a question block has sub-items a) b) c) d) or a)[0,TH] but was default placed in PART_I, auto-promote to PART_II
+        p1_opt_regex = re.compile(
+            r'(?:^|(?<=\n)|(?<=\s{2})|(?<=\t))\s*(\*?[A-D]\*?[\.\:\)]|\*?[A-D]\*|\*[A-D])(?=\s|$)',
+            re.MULTILINE | re.IGNORECASE
+        )
+        p2_sub_regex = re.compile(
+            r'(?:^|(?<=\n)|(?<=\s{2})|(?<=\t))\s*(\*?[a-d]\*?[\.\:\)]|\*?[a-d]\*|\*[a-d])\s*(?:\[\d*\s*,\s*([A-Z]+)\]|\[([A-Z]+)\])?(?=\s|$)',
+            re.MULTILINE | re.IGNORECASE
+        )
+
+        p1_peek = list(p1_opt_regex.finditer(main_block_text))
+        p2_peek = list(p2_sub_regex.finditer(main_block_text))
+
+        if part_type == 'PART_I' and len(p2_peek) >= 2 and len(p1_peek) < 2:
+            part_type = 'PART_II'
+            if not has_explicit_point:
+                point = 2.00
+        elif part_type == 'PART_II' and len(p1_peek) >= 2 and len(p2_peek) < 2:
+            part_type = 'PART_I'
+            if not has_explicit_point:
+                point = 0.50
+
         if part_type == 'PART_I':
             # AZOTA PART I: Scan all options *A. B. C. D., A*. A*) *A) at line start or separated by 2+ spaces / tabs
             # Exclude code dot-access like A.id, object.field, etc.
-            opt_regex = re.compile(
-                r'(?:^|(?<=\n)|(?<=\s{2})|(?<=\t))\s*(\*?[A-D]\*?[\.\:\)]|\*?[A-D]\*|\*[A-D])(?=\s|$)',
-                re.MULTILINE | re.IGNORECASE
-            )
+            opt_regex = p1_opt_regex
 
             matches = list(opt_regex.finditer(main_block_text))
             if matches:
