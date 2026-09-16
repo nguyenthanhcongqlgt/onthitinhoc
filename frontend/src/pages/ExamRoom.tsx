@@ -168,8 +168,15 @@ export const ExamRoom: React.FC = () => {
         }
       } catch (err: any) {
         console.error(err);
-        alert(err.response?.data?.detail || 'Không thể tải đề thi.');
-        navigate('/teacher');
+        const errorDetail =
+          err.response?.data?.detail ||
+          (err.response?.status === 404
+            ? 'Đề thi không tồn tại hoặc máy chủ Backend Render đang deploy phiên bản mới. Vui lòng thử lại sau 1-2 phút!'
+            : err.message === 'Network Error'
+            ? 'Máy chủ Backend (Render) đang khởi động hoặc mất kết nối mạng. Vui lòng đợi giây lát rồi thử lại!'
+            : 'Không thể tải đề thi.');
+        alert(errorDetail);
+        navigate(isPreviewParam ? '/teacher' : '/dashboard');
       } finally {
         setIsLoading(false);
       }
