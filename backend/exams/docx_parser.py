@@ -617,7 +617,8 @@ class DocxExamParser:
             media_url = '/media/'
 
         images_dir = os.path.join(media_root, 'exam_images')
-        os.makedirs(images_dir, exist_ok=True)
+        from django.core.files.storage import default_storage
+        from django.core.files.base import ContentFile
 
         for rel_id, rel in doc.part.rels.items():
             if "image" in rel.target_ref:
@@ -626,10 +627,8 @@ class DocxExamParser:
                     ext = image_part.content_type.split('/')[-1]
                     if ext == 'jpeg': ext = 'jpg'
                     filename = f"img_{uuid.uuid4().hex[:12]}.{ext}"
-                    filepath = os.path.join(images_dir, filename)
-                    with open(filepath, "wb") as f:
-                        f.write(image_part.blob)
-                    image_mapping[rel_id] = f"{media_url}exam_images/{filename}"
+                    saved_path = default_storage.save(f"exam_images/{filename}", ContentFile(image_part.blob))
+                    image_mapping[rel_id] = default_storage.url(saved_path)
                 except Exception as e:
                     print(f"Warning extracting image {rel_id}: {e}")
 
@@ -928,10 +927,8 @@ class DocxExamParser:
                             raw_data = stream.get_data()
                             ext = 'png'
                             filename = f"pdf_img_{page_idx+1}_{img_idx+1}_{uuid.uuid4().hex[:8]}.{ext}"
-                            filepath = os.path.join(images_dir, filename)
-                            with open(filepath, 'wb') as f:
-                                f.write(raw_data)
-                            img_url = f"{media_url}exam_images/{filename}"
+                            saved_path = default_storage.save(f"exam_images/{filename}", ContentFile(raw_data))
+                            img_url = default_storage.url(saved_path)
                             p_text += f"\n![Hình ảnh]({img_url})\n"
                 except Exception as img_err:
                     print(f"Warning extracting PDF image on page {page_idx}: {img_err}")

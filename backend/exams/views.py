@@ -848,7 +848,7 @@ class UploadExamImageView(APIView):
         relative_path = os.path.join('exam_images', filename)
 
         saved_path = default_storage.save(relative_path, ContentFile(file.read()))
-        media_url = os.path.join(settings.MEDIA_URL, saved_path).replace('\\', '/')
+        media_url = default_storage.url(saved_path)
 
         return Response({
             'url': media_url,
