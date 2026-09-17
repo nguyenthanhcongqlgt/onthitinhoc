@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { examsApi } from '../../services/api';
-import { ExamAnalyticsData } from '../../types';
+import { examsApi, assessmentApi } from '../../services/api';
+import { ExamAnalyticsData, ExamSessionDetail } from '../../types';
 import {
   BarChart3,
   Award,
@@ -12,6 +12,10 @@ import {
   Layers,
   HelpCircle,
   CheckCircle2,
+  List,
+  Eye,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 
 interface Props {
@@ -23,6 +27,12 @@ export const ExamAnalyticsModal: React.FC<Props> = ({ examId, onClose }) => {
   const [data, setData] = useState<ExamAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  
+  // Submission list states
+  const [showSubmissions, setShowSubmissions] = useState<boolean>(false);
+  const [sessions, setSessions] = useState<ExamSessionDetail[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState<boolean>(false);
+  const [sessionsError, setSessionsError] = useState<string>('');
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -38,6 +48,21 @@ export const ExamAnalyticsModal: React.FC<Props> = ({ examId, onClose }) => {
     };
     fetchAnalytics();
   }, [examId]);
+
+  const handleFetchSessions = async () => {
+    setShowSubmissions(true);
+    setIsLoadingSessions(true);
+    setSessionsError('');
+    try {
+      const res = await assessmentApi.getSessions({ exam_id: examId });
+      setSessions(res);
+    } catch (err: any) {
+      console.error(err);
+      setSessionsError(err.response?.data?.detail || 'Không thể tải danh sách bài làm.');
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
@@ -69,14 +94,96 @@ export const ExamAnalyticsModal: React.FC<Props> = ({ examId, onClose }) => {
           <div className="my-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs">{error}</div>
         ) : !data || data.total_submissions === 0 ? (
           <div className="py-20 text-center text-slate-500 text-sm">Chưa có bài nộp nào cho đề thi này để thống kê phổ điểm.</div>
+        ) : showSubmissions ? (
+          <div className="flex-1 overflow-y-auto space-y-4 pt-4 pr-1">
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setShowSubmissions(false)}
+                className="flex items-center gap-1 text-sm font-semibold text-slate-400 hover:text-white transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Quay lại thống kê
+              </button>
+            </div>
+            
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center gap-2">
+                <List className="h-4 w-4 text-blue-400" />
+                Danh sách chi tiết lượt nộp bài
+              </h4>
+              
+              {isLoadingSessions ? (
+                <div className="py-12 text-center text-slate-400 text-sm">Đang tải danh sách bài làm...</div>
+              ) : sessionsError ? (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs">{sessionsError}</div>
+              ) : sessions.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-sm">Chưa có bài nộp nào.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                        <th className="pb-2.5 font-bold">Thí sinh</th>
+                        <th className="pb-2.5 font-bold">Lớp</th>
+                        <th className="pb-2.5 font-bold">Trạng thái</th>
+                        <th className="pb-2.5 font-bold">Nộp lúc</th>
+                        <th className="pb-2.5 font-bold text-center">Điểm số</th>
+                        <th className="pb-2.5 font-bold text-right">Báo cáo</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-slate-300">
+                      {sessions.map((session) => (
+                        <tr key={session.id} className="hover:bg-slate-800/30">
+                          <td className="py-3 font-semibold text-white">{session.student_name}</td>
+                          <td className="py-3 text-slate-400">{session.student_class || '-'}</td>
+                          <td className="py-3">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              session.status === 'SUBMITTED' ? 'bg-emerald-500/20 text-emerald-400' :
+                              session.status === 'LOCKED_VIOLATION' ? 'bg-red-500/20 text-red-400' :
+                              'bg-blue-500/20 text-blue-400'
+                            }`}>
+                              {session.status_display}
+                            </span>
+                          </td>
+                          <td className="py-3 text-slate-400">
+                            {session.submit_time ? new Date(session.submit_time).toLocaleString('vi-VN') : '-'}
+                          </td>
+                          <td className="py-3 text-center font-bold text-indigo-300 text-sm">
+                            {session.total_score}
+                          </td>
+                          <td className="py-3 text-right">
+                            <a
+                              href={`/result/${session.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-colors text-[11px] font-bold"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Chi tiết
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <div className="flex-1 overflow-y-auto space-y-6 pt-4 pr-1">
             {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-center">
-                <div className="text-xs font-bold uppercase text-slate-400 mb-1">Số Lượt Nộp</div>
+              <button
+                type="button"
+                onClick={handleFetchSessions}
+                className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-center hover:border-blue-500/50 hover:bg-slate-900 transition-all group"
+              >
+                <div className="text-xs font-bold uppercase text-slate-400 mb-1 group-hover:text-blue-400 flex items-center justify-center gap-1">
+                  Số Lượt Nộp <List className="h-3 w-3" />
+                </div>
                 <div className="text-2xl font-black text-white">{data.total_submissions}</div>
-              </div>
+              </button>
               <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-center">
                 <div className="text-xs font-bold uppercase text-blue-400 mb-1">Điểm Trung Bình</div>
                 <div className="text-2xl font-black text-blue-300">{data.average_score} <span className="text-xs font-normal">/ {data.max_scale}đ</span></div>

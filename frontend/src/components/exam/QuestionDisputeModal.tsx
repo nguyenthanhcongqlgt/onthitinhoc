@@ -68,9 +68,9 @@ export const QuestionDisputeModal: React.FC<QuestionDisputeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl space-y-4">
+      <div className="w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
+        <div className="flex items-center justify-between border-b border-slate-800 p-6 pb-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-600/20 text-red-400 border border-red-500/30">
               <Flag className="h-4 w-4" />
@@ -92,11 +92,12 @@ export const QuestionDisputeModal: React.FC<QuestionDisputeModalProps> = ({
           </button>
         </div>
 
-        {/* Question content snippet */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-300 line-clamp-3">
-          <span className="font-bold text-slate-400">Nội dung câu hỏi: </span>
-          {questionContent}
-        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+          {/* Question content snippet */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-3 text-xs text-slate-300 line-clamp-3">
+            <span className="font-bold text-slate-400">Nội dung câu hỏi: </span>
+            {questionContent}
+          </div>
 
         {errorMsg && (
           <div className="p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
@@ -170,7 +171,7 @@ export const QuestionDisputeModal: React.FC<QuestionDisputeModalProps> = ({
           </div>
 
           {/* Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
               onClick={onClose}
@@ -189,6 +190,7 @@ export const QuestionDisputeModal: React.FC<QuestionDisputeModalProps> = ({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

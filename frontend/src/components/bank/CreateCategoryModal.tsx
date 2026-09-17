@@ -48,8 +48,8 @@ export const CreateCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSucces
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+      <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
               <FolderPlus className="h-5 w-5" />
@@ -65,37 +65,39 @@ export const CreateCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSucces
           </button>
         </div>
 
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden min-h-0">
+          <div className="p-6 overflow-y-auto custom-scrollbar space-y-4 text-sm">
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Tên chuyên đề <span className="text-red-400">*</span></label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ví dụ: Hàm và mảng một chiều"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              autoFocus
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">Mô tả thêm (Tùy chọn)</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="Ghi chú về độ khó hoặc nội dung bao quát..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
-            />
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Tên chuyên đề <span className="text-red-400">*</span></label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ví dụ: Hàm và mảng một chiều"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Mô tả thêm (Tùy chọn)</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Ghi chú về độ khó hoặc nội dung bao quát..."
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
+              />
+            </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+          <div className="p-6 pt-4 border-t border-slate-800 flex justify-end gap-3 shrink-0">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800 hover:text-white">
               Hủy
             </button>

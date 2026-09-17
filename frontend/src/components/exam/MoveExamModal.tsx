@@ -69,9 +69,9 @@ export const MoveExamModal: React.FC<Props> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4">
+      <div className="w-full max-w-md max-h-[90vh] flex flex-col rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+        <div className="flex items-center justify-between p-6 pb-3.5 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
               <FolderSymlink className="h-5 w-5" />
@@ -88,15 +88,16 @@ export const MoveExamModal: React.FC<Props> = ({
           </button>
         </div>
 
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
-        {/* Current location banner */}
-        <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
+          {/* Current location banner */}
+          <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center justify-between">
           <span className="text-slate-400">Vị trí hiện tại:</span>
           <span className="font-semibold text-blue-400 truncate max-w-[200px]">
             {exam.folder_path || exam.folder_name || 'Chưa phân loại'}
@@ -191,8 +192,10 @@ export const MoveExamModal: React.FC<Props> = ({
           )}
         </div>
 
+        </div>
+
         {/* Footer */}
-        <div className="pt-3 border-t border-slate-800 flex justify-end gap-3">
+        <div className="p-6 pt-3 border-t border-slate-800 flex justify-end gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}

@@ -396,8 +396,8 @@ export const assessmentApi = {
     const res = await apiClient.post(`/assessment/sessions/${sessionId}/submit/`, data);
     return res.data;
   },
-  getSessions: async (): Promise<ExamSessionDetail[]> => {
-    const res = await apiClient.get('/assessment/sessions/');
+  getSessions: async (params?: { exam_id?: number }): Promise<ExamSessionDetail[]> => {
+    const res = await apiClient.get('/assessment/sessions/', { params });
     return res.data;
   },
   getSessionDetail: async (sessionId: number): Promise<ExamSessionDetail> => {

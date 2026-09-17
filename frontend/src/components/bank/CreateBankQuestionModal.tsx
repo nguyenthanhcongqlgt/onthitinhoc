@@ -104,11 +104,11 @@ export const CreateBankQuestionModal: React.FC<Props> = ({ isOpen, onClose, onSu
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in">
-      <div className="w-full max-w-4xl my-auto rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="w-full max-w-4xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/80 sticky top-0 z-10">
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30">
               <Plus className="h-5 w-5" />
@@ -125,7 +125,7 @@ export const CreateBankQuestionModal: React.FC<Props> = ({ isOpen, onClose, onSu
         </div>
 
         {/* Content */}
-        <div className="p-6 max-h-[75vh] overflow-y-auto">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex flex-col min-h-0">
           {errorMsg && (
             <div className="mb-5 p-3 rounded-xl bg-red-950/60 border border-red-800 text-red-300 text-xs flex items-center gap-2">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -245,7 +245,7 @@ export const CreateBankQuestionModal: React.FC<Props> = ({ isOpen, onClose, onSu
                         onChange={(e) => updateOption(idx, 'content', e.target.value)}
                         rows={2}
                         placeholder="Nội dung phương án..."
-                        className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none resize-none"
+                        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white focus:border-indigo-500 focus:outline-none resize-none"
                       />
                     </div>
                   </div>
@@ -269,7 +269,7 @@ export const CreateBankQuestionModal: React.FC<Props> = ({ isOpen, onClose, onSu
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-5 border-t border-slate-800 bg-slate-900/80">
+        <div className="flex items-center justify-end gap-3 p-6 pt-4 border-t border-slate-800 shrink-0">
           <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
             Hủy
           </button>

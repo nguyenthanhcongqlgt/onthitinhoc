@@ -134,17 +134,9 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in">
-      <div className="relative w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute right-5 top-5 rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        {/* Header Icon & Title */}
-        <div className="flex items-center gap-3 mb-6">
+      <div className="relative w-full max-w-md max-h-[90vh] flex flex-col rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl overflow-hidden">
+        {/* Header Content */}
+        <div className="flex items-center gap-3 p-6 sm:p-8 pb-4 shrink-0 border-b border-slate-800">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
             <Shield className="h-6 w-6" />
           </div>
@@ -153,6 +145,17 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose,
             <p className="text-xs text-slate-400">Google Authenticator / TOTP</p>
           </div>
         </div>
+
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute right-5 top-5 rounded-full p-2 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+        >
+          <X className="h-5 w-5" />
+        </button>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 pt-4 custom-scrollbar">
 
         {error && (
           <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-red-500/30 bg-red-500/10 p-3.5 text-xs text-red-300">
@@ -389,6 +392,7 @@ export const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose,
             </div>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

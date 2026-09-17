@@ -79,100 +79,104 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl">
+      <div className="relative w-full max-w-lg rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl flex flex-col max-h-[90vh]">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute right-5 top-5 text-slate-400 hover:text-white transition-colors"
+          className="absolute right-5 top-5 text-slate-400 hover:text-white transition-colors z-10"
         >
           <X size={20} />
         </button>
 
         {/* Modal Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md">
-            <GraduationCap className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-white">
-              {classToEdit ? 'Chỉnh Sửa Lớp Học' : 'Tạo Lớp Học Mới'}
-            </h3>
-            <p className="text-xs text-slate-400">
-              {classToEdit
-                ? `Cập nhật thông tin cho lớp: ${classToEdit.name}`
-                : 'Khởi tạo lớp mới để phân nhóm học sinh và giao đề thi'}
-            </p>
+        <div className="p-6 sm:p-8 shrink-0 border-b border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <div className="pr-6">
+              <h3 className="text-lg font-bold text-white">
+                {classToEdit ? 'Chỉnh Sửa Lớp Học' : 'Tạo Lớp Học Mới'}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {classToEdit
+                  ? `Cập nhật thông tin cho lớp: ${classToEdit.name}`
+                  : 'Khởi tạo lớp mới để phân nhóm học sinh và giao đề thi'}
+              </p>
+            </div>
           </div>
         </div>
 
-        {error && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
-            <AlertCircle size={16} className="shrink-0 text-red-400" />
-            <span>{error}</span>
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden min-h-0">
+          <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar space-y-4">
+            {error && (
+              <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+                <AlertCircle size={16} className="shrink-0 text-red-400" />
+                <span>{error}</span>
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Tên lớp học <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="vd: 12A1 (HSG Tin học), Đội tuyển Tỉnh 2025"
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Khối lớp
+                Tên lớp học <span className="text-red-400">*</span>
               </label>
-              <select
-                value={grade}
-                onChange={(e) => setGrade(e.target.value as GradeLevel)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-3 text-sm text-white focus:border-blue-500 focus:outline-none"
-              >
-                <option value="12">Khối 12</option>
-                <option value="11">Khối 11</option>
-                <option value="10">Khối 10</option>
-                <option value="HSG">Đội tuyển HSG</option>
-                <option value="OTHER">Khác</option>
-              </select>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="vd: 12A1 (HSG Tin học), Đội tuyển Tỉnh 2025"
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Khối lớp
+                </label>
+                <select
+                  value={grade}
+                  onChange={(e) => setGrade(e.target.value as GradeLevel)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-3 text-sm text-white focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="12">Khối 12</option>
+                  <option value="11">Khối 11</option>
+                  <option value="10">Khối 10</option>
+                  <option value="HSG">Đội tuyển HSG</option>
+                  <option value="OTHER">Khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Năm học
+                </label>
+                <input
+                  type="text"
+                  value={schoolYear}
+                  onChange={(e) => setSchoolYear(e.target.value)}
+                  placeholder="2025-2026"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                Năm học
+                Ghi chú / Mô tả lớp học
               </label>
-              <input
-                type="text"
-                value={schoolYear}
-                onChange={(e) => setSchoolYear(e.target.value)}
-                placeholder="2025-2026"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+              <textarea
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Mô tả mục tiêu lớp học, lịch học, lưu ý cho học sinh..."
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-              Ghi chú / Mô tả lớp học
-            </label>
-            <textarea
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Mô tả mục tiêu lớp học, lịch học, lưu ý cho học sinh..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-
-          <div className="pt-2 flex justify-end gap-3">
+          <div className="p-6 sm:p-8 pt-4 border-t border-slate-800 shrink-0 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}

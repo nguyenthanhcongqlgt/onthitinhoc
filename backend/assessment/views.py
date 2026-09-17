@@ -248,6 +248,11 @@ class ExamSessionListView(generics.ListAPIView):
             ).distinct()
         else:
             qs = ExamSession.objects.filter(student=user)
+            
+        exam_id = self.request.query_params.get('exam_id')
+        if exam_id:
+            qs = qs.filter(exam_id=exam_id)
+            
         return qs.select_related('student', 'exam')
 
 
