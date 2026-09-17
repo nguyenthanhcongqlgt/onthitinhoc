@@ -185,77 +185,74 @@ export const Home: React.FC = () => {
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Brand Logo & Name */}
-          <Link to="/" className="flex items-center gap-3.5 group">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm sm:text-base tracking-tight text-white group-hover:text-blue-400 transition-colors">
-                  TRƯỜNG THPT QUẤT LÂM - NINH BÌNH
+              <div className="flex flex-col justify-center">
+                <span className="font-extrabold text-sm sm:text-base md:text-lg tracking-tight text-white group-hover:text-blue-400 transition-colors uppercase leading-tight whitespace-nowrap">
+                  Web App Ôn thi trắc nghiệm
                 </span>
-                <span className="hidden md:inline-flex items-center rounded-md bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-400 border border-blue-500/20">
-                  Khảo Thí Số
+                <span className="font-extrabold text-xs sm:text-sm md:text-base tracking-tight text-blue-400 transition-colors uppercase leading-tight whitespace-nowrap">
+                  Môn Tin học THPT
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs font-semibold text-slate-400">
-                Hệ thống Ôn thi & Khảo thí Trắc nghiệm Môn Tin học
-              </p>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold text-slate-300">
+          <nav className="hidden xl:flex items-center gap-8 text-sm font-semibold text-slate-300">
             <button
               onClick={() => scrollToSection('about')}
-              className="hover:text-blue-400 transition-colors py-1 cursor-pointer"
+              className="hover:text-blue-400 transition-colors py-2 cursor-pointer"
             >
               Giới thiệu
             </button>
             <button
               onClick={() => scrollToSection('structure')}
-              className="hover:text-blue-400 transition-colors py-1 cursor-pointer"
+              className="hover:text-blue-400 transition-colors py-2 cursor-pointer"
             >
-              Cấu trúc đề Bộ GD&ĐT
+              Cấu trúc đề
             </button>
             <button
               onClick={() => scrollToSection('security')}
-              className="hover:text-blue-400 transition-colors py-1 cursor-pointer"
+              className="hover:text-blue-400 transition-colors py-2 cursor-pointer"
             >
-              Phòng thi Anti-Cheat
+              Anti-Cheat
             </button>
             <button
               onClick={() => scrollToSection('steps')}
-              className="hover:text-blue-400 transition-colors py-1 cursor-pointer"
+              className="hover:text-blue-400 transition-colors py-2 cursor-pointer"
             >
-              Quy trình thi
+              Quy trình
             </button>
             <button
               onClick={() => setShowDisclaimerModal(true)}
-              className="hover:text-amber-400 text-slate-400 transition-colors py-1 cursor-pointer flex items-center gap-1"
+              className="hover:text-amber-400 text-slate-400 transition-colors py-2 cursor-pointer flex items-center gap-1.5"
             >
-              <Scale className="h-3.5 w-3.5 text-amber-400" />
-              Miễn trừ trách nhiệm
+              <Scale className="h-4 w-4 text-amber-400" />
+              Miễn trừ
             </button>
             <button
               onClick={() => scrollToSection('contact')}
-              className="hover:text-blue-400 transition-colors py-1 cursor-pointer"
+              className="hover:text-blue-400 transition-colors py-2 cursor-pointer"
             >
               Liên hệ
             </button>
           </nav>
 
           {/* Desktop Right Actions: ThemeToggle + Auth Status */}
-          <div className="hidden sm:flex items-center gap-3">
-            <ThemeToggle />
+          <div className="hidden sm:flex items-center gap-4">
+            <ThemeToggle variant="switch-only" />
 
             {user ? (
-              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-                <div className="text-right">
-                  <div className="text-xs font-bold text-slate-200 truncate max-w-[140px]">
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-700">
+                <div className="text-right hidden md:block">
+                  <div className="text-sm font-bold text-slate-200 truncate max-w-[150px]">
                     {user.full_name || user.username}
                   </div>
-                  <div className="text-[10px] font-semibold text-blue-400">
+                  <div className="text-xs font-semibold text-blue-400">
                     {user.role === 'STUDENT'
                       ? user.class_name || 'Học sinh'
                       : user.role === 'ADMIN'
@@ -266,34 +263,34 @@ export const Home: React.FC = () => {
 
                 <Link
                   to={user.role === 'STUDENT' ? '/dashboard' : '/teacher'}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-all"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-all"
                 >
                   <span>Bảng điều khiển</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
 
                 <button
                   onClick={logout}
                   title="Đăng xuất"
-                  className="p-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-colors cursor-pointer"
+                  className="p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-colors cursor-pointer"
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+              <div className="flex items-center gap-2 pl-4 border-l border-slate-700">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/80 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900/80 text-sm font-bold text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
                 >
-                  <LogIn className="h-3.5 w-3.5" />
+                  <LogIn className="h-4 w-4" />
                   <span>Đăng nhập</span>
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-all"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 transition-all"
                 >
-                  <UserPlus className="h-3.5 w-3.5" />
+                  <UserPlus className="h-4 w-4" />
                   <span>Đăng ký</span>
                 </Link>
               </div>
@@ -301,42 +298,42 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Mobile Hamburger Button */}
-          <div className="flex items-center gap-2 sm:hidden">
-            <ThemeToggle />
+          <div className="flex items-center gap-3 sm:hidden">
+            <ThemeToggle variant="switch-only" />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white"
+              className="p-2 rounded-xl border border-slate-700 bg-slate-900 text-slate-300 hover:text-white"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
         </div>
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="sm:hidden border-t border-slate-800 bg-slate-950 px-4 pt-3 pb-5 space-y-3">
-            <div className="flex flex-col space-y-2 text-xs font-semibold text-slate-300">
+          <div className="sm:hidden border-t border-slate-800 bg-slate-950 px-4 pt-3 pb-5 space-y-4">
+            <div className="flex flex-col space-y-1.5 text-sm font-semibold text-slate-300">
               <button
                 onClick={() => scrollToSection('about')}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-900"
+                className="text-left py-3 px-4 rounded-xl hover:bg-slate-900"
               >
                 Giới thiệu
               </button>
               <button
                 onClick={() => scrollToSection('structure')}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-900"
+                className="text-left py-3 px-4 rounded-xl hover:bg-slate-900"
               >
                 Cấu trúc đề thi Bộ GD&ĐT
               </button>
               <button
                 onClick={() => scrollToSection('security')}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-900"
+                className="text-left py-3 px-4 rounded-xl hover:bg-slate-900"
               >
                 Phòng thi Anti-Cheat
               </button>
               <button
                 onClick={() => scrollToSection('steps')}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-900"
+                className="text-left py-3 px-4 rounded-xl hover:bg-slate-900"
               >
                 Quy trình thi
               </button>
@@ -345,54 +342,54 @@ export const Home: React.FC = () => {
                   setMobileMenuOpen(false);
                   setShowDisclaimerModal(true);
                 }}
-                className="text-left py-2 px-3 rounded-lg text-amber-400 hover:bg-slate-900 flex items-center gap-1.5"
+                className="text-left py-3 px-4 rounded-xl text-amber-400 hover:bg-slate-900 flex items-center gap-2"
               >
-                <Scale className="h-3.5 w-3.5" />
+                <Scale className="h-4 w-4" />
                 Miễn trừ trách nhiệm
               </button>
               <button
                 onClick={() => scrollToSection('contact')}
-                className="text-left py-2 px-3 rounded-lg hover:bg-slate-900"
+                className="text-left py-3 px-4 rounded-xl hover:bg-slate-900"
               >
                 Liên hệ kỹ thuật
               </button>
             </div>
 
-            <div className="pt-3 border-t border-slate-800">
+            <div className="pt-4 border-t border-slate-800">
               {user ? (
-                <div className="space-y-2">
-                  <div className="text-xs font-bold text-white px-1">
-                    {user.full_name || user.username} ({user.role})
+                <div className="space-y-3">
+                  <div className="text-sm font-bold text-white px-2">
+                    {user.full_name || user.username} <span className="text-blue-400 font-semibold">({user.role})</span>
                   </div>
                   <Link
                     to={user.role === 'STUDENT' ? '/dashboard' : '/teacher'}
-                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 text-xs font-bold text-white"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 text-sm font-bold text-white"
                   >
                     <span>Vào Bảng điều khiển</span>
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <button
                     onClick={logout}
-                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-slate-800 bg-slate-900 text-xs font-semibold text-red-400"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-sm font-semibold text-red-400 hover:bg-slate-800"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Đăng xuất</span>
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <Link
                     to="/login"
-                    className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 text-xs font-bold text-white text-center"
+                    className="flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl border border-slate-700 bg-slate-900 text-sm font-bold text-white text-center"
                   >
-                    <LogIn className="h-3.5 w-3.5" />
+                    <LogIn className="h-4 w-4" />
                     <span>Đăng nhập</span>
                   </Link>
                   <Link
                     to="/register"
-                    className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-blue-600 text-xs font-bold text-white text-center"
+                    className="flex items-center justify-center gap-1.5 px-3 py-3 rounded-xl bg-blue-600 text-sm font-bold text-white text-center"
                   >
-                    <UserPlus className="h-3.5 w-3.5" />
+                    <UserPlus className="h-4 w-4" />
                     <span>Đăng ký</span>
                   </Link>
                 </div>

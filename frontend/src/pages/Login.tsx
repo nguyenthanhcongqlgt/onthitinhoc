@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Home, GraduationCap, Lock, AlertCircle, ArrowRight, Sparkles, ShieldCheck, KeyRound, ArrowLeft, Eye, EyeOff } from 'lucide-react';
@@ -6,7 +6,7 @@ import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loginWith2FA } = useAuth();
+  const { user, login, loginWith2FA } = useAuth();
   const [searchParams] = useSearchParams();
 
   const targetExamCode = searchParams.get('exam_code') || '';
@@ -18,6 +18,7 @@ export const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPass, setShowForgotPass] = useState(false);
 
   // 2FA States
   const [requires2FA, setRequires2FA] = useState(false);
@@ -36,6 +37,12 @@ export const Login: React.FC = () => {
       navigate('/teacher');
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      handleRedirectAfterLogin(user);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,9 +215,31 @@ export const Login: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
-                  Mật khẩu
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Mật khẩu
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPass(!showForgotPass)}
+                    className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    Quên mật khẩu?
+                  </button>
+                </div>
+                
+                {showForgotPass && (
+                  <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 text-xs text-blue-200 animate-in fade-in slide-in-from-top-2">
+                    <div className="font-bold text-blue-300 mb-1 flex items-center gap-1.5">
+                      <AlertCircle className="h-4 w-4" />
+                      Hướng dẫn cấp lại mật khẩu
+                    </div>
+                    <p className="leading-relaxed">
+                      Để bảo mật tài khoản, học sinh không thể tự đổi mật khẩu nếu đã quên. Vui lòng liên hệ <strong className="text-white">Giáo viên bộ môn</strong> hoặc Quản trị viên <strong className="text-white">Zalo: 0988999303 (Thầy Công)</strong> để được cấp lại mật khẩu mới.
+                    </p>
+                  </div>
+                )}
+
                 <div className="relative">
                   <input
                     id="password"

@@ -618,7 +618,7 @@ export const TeacherDashboard: React.FC = () => {
                       <button
                         type="button"
                         onClick={(e) => toggleExpandFolder(f.id, e)}
-                        className="p-0.5 rounded hover:bg-white/10 text-slate-400 hover:text-white"
+                        className="p-0.5 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
                       >
                         {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                       </button>
@@ -659,7 +659,7 @@ export const TeacherDashboard: React.FC = () => {
                           e.stopPropagation();
                           handleCreateFolder(f.id);
                         }}
-                        className="p-1 rounded-md hover:bg-white/20 text-slate-300 hover:text-white"
+                        className="p-1 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200"
                         title="Thêm thư mục con"
                       >
                         <Plus className="h-3 w-3" />
@@ -669,7 +669,7 @@ export const TeacherDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={(e) => handleEditFolder(f, e)}
-                            className="p-1 rounded-md hover:bg-white/20 text-slate-300 hover:text-white"
+                            className="p-1 rounded-md hover:bg-slate-800 text-slate-400 hover:text-slate-200"
                             title="Chỉnh sửa thư mục"
                           >
                             <Edit3 className="h-3 w-3" />
@@ -1232,134 +1232,117 @@ export const TeacherDashboard: React.FC = () => {
                                   </div>
                                 )}
                               </div>
-
-                              {/* Quick Live Proctor & Analytics Buttons */}
-                              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/60">
-                                <button
-                                  type="button"
-                                  onClick={() => setLiveProctorExamId(exam.id)}
-                                  className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 py-1.5 px-2 text-xs font-bold text-red-300 hover:bg-red-500/20 transition-all shadow-sm"
-                                  title="Giám sát trực tiếp thí sinh đang làm bài, phát hiện vi phạm và điều khiển phòng thi"
-                                >
-                                  <Radio className="h-3.5 w-3.5 text-red-400 animate-pulse" />
-                                  <span>Giám sát (Live)</span>
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => setAnalyticsExamId(exam.id)}
-                                  className="flex items-center justify-center gap-1.5 rounded-xl border border-indigo-500/30 bg-indigo-500/10 py-1.5 px-2 text-xs font-bold text-indigo-300 hover:bg-indigo-500/20 transition-all shadow-sm"
-                                  title="Xem phổ điểm và phân tích độ khó từng câu hỏi"
-                                >
-                                  <BarChart3 className="h-3.5 w-3.5 text-indigo-400" />
-                                  <span>Phổ điểm</span>
-                                </button>
-                              </div>
                             </div>
 
-                            {/* Bottom Action Bar */}
-                            <div className="border-t border-slate-800/80 pt-3 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {/* Preview Exam Button */}
-                                <button
-                                  type="button"
-                                  onClick={() => window.open(`/exam/${exam.id}?preview=true`, '_blank')}
-                                  className="flex items-center gap-1.5 rounded-xl border border-emerald-600/50 bg-emerald-950/40 px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-900/60 hover:text-white transition-all shadow-sm"
-                                  title="Xem trước giao diện phòng thi của học sinh"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-emerald-400" />
-                                  <span>Xem trước</span>
-                                </button>
-
-                                {canEditOrDelete ? (
-                                  <>
+                              {/* Action Buttons Redesign */}
+                              <div className="pt-3 border-t border-slate-800/80 space-y-2.5">
+                                {/* Primary Actions: Edit & Assign */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  {canEditOrDelete ? (
                                     <button
                                       type="button"
                                       onClick={() => navigate(`/teacher/create-exam?edit=${exam.id}`)}
-                                      className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-white transition-all shadow-sm"
+                                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all shadow-sm"
                                       title="Chỉnh sửa nội dung, câu hỏi và đáp án đề thi"
                                     >
-                                      <Edit3 className="h-3.5 w-3.5 text-blue-400" />
-                                      <span>Sửa</span>
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                      <span>Sửa đề thi</span>
                                     </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => navigate(`/teacher/create-exam?edit=${exam.id}`)}
+                                      className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 hover:text-white transition-all shadow-sm"
+                                      title="Xem nội dung đề thi được chia sẻ"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                      <span>Xem đề thi</span>
+                                    </button>
+                                  )}
 
+                                  <button
+                                    type="button"
+                                    onClick={() => setAssigningExam(exam)}
+                                    className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-bold transition-all shadow-sm ${
+                                      exam.is_assigned
+                                        ? 'bg-emerald-600/90 text-white hover:bg-emerald-500 shadow-emerald-600/20'
+                                        : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/20'
+                                    }`}
+                                  >
+                                    <Send className="h-3.5 w-3.5" />
+                                    <span>{exam.is_assigned ? 'Cài đặt giao đề' : 'Giao đề ngay'}</span>
+                                  </button>
+                                </div>
+
+                                {/* Secondary Tools Bar (Icons Only) */}
+                                <div className="flex items-center justify-between rounded-xl bg-slate-900/50 p-1 border border-slate-800/50">
+                                  <div className="flex items-center gap-0.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => window.open(`/exam/${exam.id}?preview=true`, '_blank')}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
+                                      title="Xem trước giao diện phòng thi của học sinh"
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setLiveProctorExamId(exam.id)}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                      title="Giám sát trực tiếp thí sinh đang làm bài (Live)"
+                                    >
+                                      <Radio className="h-4 w-4" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setAnalyticsExamId(exam.id)}
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+                                      title="Xem phổ điểm và phân tích độ khó"
+                                    >
+                                      <BarChart3 className="h-4 w-4" />
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => setMovingExam(exam)}
-                                      className="flex items-center gap-1 rounded-xl border border-purple-700/60 bg-purple-950/40 px-2.5 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-900 hover:text-white transition-all shadow-sm"
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all"
                                       title="Chuyển bài kiểm tra sang thư mục khác"
                                     >
-                                      <FolderSymlink className="h-3.5 w-3.5 text-purple-400" />
-                                      <span className="hidden sm:inline">Chuyển</span>
+                                      <FolderSymlink className="h-4 w-4" />
                                     </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => setSharingExam(exam)}
-                                      className="flex items-center gap-1 rounded-xl border border-indigo-700/60 bg-indigo-950/40 px-2 py-1.5 text-xs font-bold text-indigo-300 hover:bg-indigo-900 hover:text-white transition-all shadow-sm"
-                                      title="Chia sẻ quyền sử dụng đề thi này cho các giáo viên khác"
-                                    >
-                                      <Share2 className="h-3.5 w-3.5 text-indigo-400" />
-                                      <span className="hidden sm:inline">Chia sẻ</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRegradeExam(exam.id, exam.title)}
-                                      className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 px-2 py-1.5 text-xs font-semibold text-slate-300 hover:text-amber-300 hover:border-amber-700/60 transition-all"
-                                      title="Chấm lại toàn bộ bài làm của học sinh theo đáp án mới nhất"
-                                    >
-                                      <RotateCw className="h-3.5 w-3.5 text-amber-400" />
-                                      <span className="hidden xl:inline">Chấm lại</span>
-                                    </button>
-
+                                    {canEditOrDelete && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => setSharingExam(exam)}
+                                          className="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+                                          title="Chia sẻ đề thi cho giáo viên khác"
+                                        >
+                                          <Share2 className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRegradeExam(exam.id, exam.title)}
+                                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-400 hover:bg-amber-500/10 transition-all"
+                                          title="Chấm lại toàn bộ bài làm của học sinh"
+                                        >
+                                          <RotateCw className="h-4 w-4" />
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                  
+                                  {canEditOrDelete && (
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteExam(exam.id, exam.title)}
-                                      className="p-1.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-500 hover:text-red-400 hover:border-red-800 transition-all"
+                                      className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all mr-0.5"
                                       title="Xóa đề thi này"
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button
-                                      type="button"
-                                      onClick={() => navigate(`/teacher/create-exam?edit=${exam.id}`)}
-                                      className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-300 hover:text-white transition-all shadow-sm"
-                                      title="Xem nội dung đề thi được chia sẻ"
-                                    >
-                                      <Eye className="h-3.5 w-3.5 text-indigo-400" />
-                                      <span>Xem đề</span>
-                                    </button>
-
-                                    <button
-                                      type="button"
-                                      onClick={() => setMovingExam(exam)}
-                                      className="flex items-center gap-1 rounded-xl border border-purple-700/60 bg-purple-950/40 px-2 py-1.5 text-xs font-bold text-purple-300 hover:bg-purple-900 hover:text-white transition-all shadow-sm"
-                                      title="Chuyển vào thư mục cá nhân"
-                                    >
-                                      <FolderSymlink className="h-3.5 w-3.5 text-purple-400" />
-                                      <span>Chuyển</span>
-                                    </button>
-                                  </>
-                                )}
+                                  )}
+                                </div>
                               </div>
-
-                              <button
-                                type="button"
-                                onClick={() => setAssigningExam(exam)}
-                                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all shadow-md ${
-                                  exam.is_assigned
-                                    ? 'bg-emerald-600/90 text-white hover:bg-emerald-500 shadow-emerald-600/20'
-                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/20'
-                                }`}
-                              >
-                                <Send className="h-3.5 w-3.5" />
-                                <span>{exam.is_assigned ? 'Cài đặt' : 'Giao đề'}</span>
-                              </button>
-                            </div>
                           </div>
                         );
                       })}

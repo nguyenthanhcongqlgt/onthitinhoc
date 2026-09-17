@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { Home, GraduationCap, UserPlus, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'STUDENT') navigate('/dashboard');
+      else navigate('/teacher');
+    }
+  }, [user]);
 
   const [formData, setFormData] = useState({
     username: '',
