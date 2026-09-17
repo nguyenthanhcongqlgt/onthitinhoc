@@ -317,9 +317,14 @@ export const TeacherDashboard: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md group-hover:scale-105 transition-transform">
                 <Shield className="h-6 w-6 text-white" />
               </div>
-              <div>
-                <h1 className="font-bold text-sm sm:text-base text-white group-hover:text-blue-300 transition-colors">WEB APP ÔN THI TRẮC NGHIỆM MÔN TIN HỌC</h1>
-                <p className="text-[10px] sm:text-xs font-semibold text-blue-400">
+              <div className="flex flex-col justify-center">
+                <span className="font-extrabold text-sm sm:text-base tracking-tight text-white group-hover:text-blue-400 transition-colors uppercase leading-tight whitespace-nowrap">
+                  Web App Ôn thi trắc nghiệm
+                </span>
+                <span className="font-extrabold text-xs sm:text-sm tracking-tight text-blue-400 transition-colors uppercase leading-tight whitespace-nowrap">
+                  Môn Tin học THPT
+                </span>
+                <p className="text-[9px] sm:text-[10px] font-semibold text-emerald-400 uppercase mt-0.5 whitespace-nowrap">
                   {isAdmin ? 'SUPER ADMIN (THẦY CÔNG)' : 'BẢNG ĐIỀU KHIỂN GIÁO VIÊN BỘ MÔN'}
                 </p>
               </div>
