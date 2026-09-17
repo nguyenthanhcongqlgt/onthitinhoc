@@ -20,7 +20,7 @@ import {
   UserCheck,
   UserX,
 } from 'lucide-react';
-import { aiService, AIConfig } from '../../services/ai';
+
 import { SCHOOL_NAME } from '../../config/constants';
 import { aiApi } from '../../services/api';
 
