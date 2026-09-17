@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  AlertCircle,
   ArrowLeft,
   ShieldAlert,
   Layers,
@@ -35,6 +36,7 @@ export const ExamResult: React.FC = () => {
 
   const [session, setSession] = useState<ExamSessionDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string>('');
 
   // Dispute / Report Question Modal State
   const [disputeQuestion, setDisputeQuestion] = useState<{ id: number; number: number; content: string } | null>(null);
@@ -47,11 +49,14 @@ export const ExamResult: React.FC = () => {
 
     const fetchResult = async () => {
       if (!sessionId) return;
+      setIsLoading(true);
+      setErrorMsg('');
       try {
         const data = await assessmentApi.getSessionDetail(Number(sessionId));
         setSession(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
+        setErrorMsg(err.response?.data?.detail || 'Không thể tải kết quả bài thi. Vui lòng kiểm tra kết nối mạng.');
       } finally {
         setIsLoading(false);
       }
@@ -59,12 +64,40 @@ export const ExamResult: React.FC = () => {
     fetchResult();
   }, [sessionId]);
 
-  if (isLoading || !session) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-slate-300">
         <div className="text-center space-y-3">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
           <p className="text-sm font-semibold">Đang tổng hợp báo cáo khảo thí số...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (errorMsg || !session) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-slate-300 p-6">
+        <div className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 max-w-md w-full text-center space-y-4 shadow-xl">
+          <div className="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mx-auto mb-2">
+            <AlertCircle size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-white">Lỗi Tải Dữ Liệu</h2>
+          <p className="text-slate-400 text-sm leading-relaxed">{errorMsg || 'Không tìm thấy dữ liệu bài làm này.'}</p>
+          <div className="pt-4 flex flex-col gap-3">
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
+            >
+              Thử Lại
+            </button>
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className="w-full py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
+            >
+              Về Bảng Điều Khiển
+            </button>
+          </div>
         </div>
       </div>
     );

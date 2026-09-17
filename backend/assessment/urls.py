@@ -11,7 +11,8 @@ from .views import (
     LiveProctorView,
     SessionControlView,
     AutoSaveDraftView,
-    StudentAnalyticsView
+    StudentAnalyticsView,
+    ExamBroadcastView
 )
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
     path('sessions/<int:session_id>/auto-save/', AutoSaveDraftView.as_view(), name='auto_save_draft'),
     path('sessions/', ExamSessionListView.as_view(), name='session_list'),
     path('sessions/<int:pk>/', ExamSessionDetailView.as_view(), name='session_detail'),
+    path('sessions/<int:session_id>/broadcasts/', ExamBroadcastView.as_view(), name='session_broadcasts'),
     path('student-analytics/', StudentAnalyticsView.as_view(), name='student_analytics'),
 ]
 

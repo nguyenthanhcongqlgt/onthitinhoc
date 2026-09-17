@@ -19,6 +19,7 @@ import {
   Sparkles,
   ShieldCheck
 } from 'lucide-react';
+import { SCHOOL_NAME } from '../config/constants';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 
 export const ChangePassword: React.FC = () => {
@@ -327,7 +328,7 @@ export const ChangePassword: React.FC = () => {
                   <School size={14} /> Trường
                 </label>
                 <div className="w-full bg-slate-950/60 border border-slate-800/80 rounded-xl px-4 py-2.5 text-slate-400 text-sm ">
-                  {user?.school || 'THPT Quất Lâm'}
+                  {user?.school || SCHOOL_NAME}
                 </div>
               </div>
             </div>

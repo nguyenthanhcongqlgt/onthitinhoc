@@ -20,6 +20,8 @@ import {
   UserCheck,
   UserX,
 } from 'lucide-react';
+import { aiService, AIConfig } from '../../services/ai';
+import { SCHOOL_NAME } from '../../config/constants';
 import { aiApi } from '../../services/api';
 
 export interface AISettings {
@@ -548,7 +550,7 @@ export const AISettingsModal: React.FC<AISettingsModalProps> = ({ isOpen, onClos
                         )}
                       </div>
                       <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                        {t.school || 'THPT Quất Lâm'} • {t.class_name || 'Bộ môn Tin học'} • {t.email}
+                        {t.school || SCHOOL_NAME} • {t.class_name || 'Bộ môn Tin học'} • {t.email}
                       </p>
                     </div>
 

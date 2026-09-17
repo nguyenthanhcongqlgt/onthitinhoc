@@ -9,7 +9,7 @@ interface MathFormulaProps {
   allowRunCode?: boolean;
 }
 
-export const MathFormula: React.FC<MathFormulaProps> = ({ text, className = '', allowRunCode = true }) => {
+export const MathFormula: React.FC<MathFormulaProps> = React.memo(({ text, className = '', allowRunCode = true }) => {
   const [lightboxImg, setLightboxImg] = useState<{ url: string; alt: string } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
 
@@ -83,13 +83,25 @@ export const MathFormula: React.FC<MathFormulaProps> = ({ text, className = '', 
         );
       }
 
+      // Get dynamic base URL (fallback to same origin or VITE_API_URL)
+      const getBaseUrl = () => {
+        if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.replace(/\/api$/, '');
+        if (typeof window !== 'undefined') {
+          if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            return `http://${window.location.hostname}:8000`;
+          }
+        }
+        return 'http://127.0.0.1:8000';
+      };
+      const baseUrl = getBaseUrl();
+
       // 3. Markdown image: ![alt](url)
       const imgMatch = /^!\[(.*?)\]\((.*?)\)$/i.exec(part);
       if (imgMatch) {
         const altText = imgMatch[1] || 'Hình ảnh';
         let imgUrl = imgMatch[2].trim();
         if (imgUrl.startsWith('/') && !imgUrl.startsWith('//') && !imgUrl.startsWith('/api') && !imgUrl.startsWith('http')) {
-          imgUrl = `http://127.0.0.1:8000${imgUrl}`;
+          imgUrl = `${baseUrl}${imgUrl}`;
         }
         return (
           <span key={index} className="my-2 block text-center">
@@ -125,7 +137,7 @@ export const MathFormula: React.FC<MathFormulaProps> = ({ text, className = '', 
       if (customImgMatch) {
         let imgUrl = customImgMatch[1].trim();
         if (imgUrl.startsWith('/') && !imgUrl.startsWith('//') && !imgUrl.startsWith('/api') && !imgUrl.startsWith('http')) {
-          imgUrl = `http://127.0.0.1:8000${imgUrl}`;
+          imgUrl = `${baseUrl}${imgUrl}`;
         }
         return (
           <span key={index} className="my-2 block text-center">
@@ -313,4 +325,4 @@ export const MathFormula: React.FC<MathFormulaProps> = ({ text, className = '', 
       )}
     </>
   );
-};
+});

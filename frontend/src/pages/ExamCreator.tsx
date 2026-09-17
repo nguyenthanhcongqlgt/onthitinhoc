@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { examsApi, aiApi, foldersApi } from '../services/api';
 import { ExamFolder } from '../types';
+import { ConfirmModal } from '../components/common/ConfirmModal';
 import { CodeViewer } from '../components/exam/CodeViewer';
 import { MathFormula } from '../components/exam/MathFormula';
 import {
@@ -547,6 +549,8 @@ export const ExamCreator: React.FC = () => {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
 
+  const [confirmConfig, setConfirmConfig] = useState<{isOpen: boolean, title: string, message: string, onConfirm: () => void, isDestructive?: boolean}>({isOpen: false, title: '', message: '', onConfirm: () => {}});
+
   // Mode: 'paste' (Raw text / copy-paste) | 'form' (Manual Add)
   const [inputMode, setInputMode] = useState<'paste' | 'form'>('paste');
   const [rawText, setRawText] = useState<string>(AZOTA_SAMPLE_TEMPLATE);
@@ -676,7 +680,7 @@ export const ExamCreator: React.FC = () => {
     });
 
     if (p1Indices.length === 0) {
-      alert('Chưa có câu hỏi Phần I nào để chia điểm.');
+      toast.error('Chưa có câu hỏi Phần I nào để chia điểm.');
       return;
     }
 
@@ -711,7 +715,7 @@ export const ExamCreator: React.FC = () => {
 
     const effectiveCount = p2CommonIndices.length + Math.max(p2CSIndices.length, p2ICTIndices.length);
     if (effectiveCount === 0) {
-      alert('Chưa có câu hỏi Phần II nào để chia điểm.');
+      toast.error('Chưa có câu hỏi Phần II nào để chia điểm.');
       return;
     }
 
@@ -1441,7 +1445,7 @@ export const ExamCreator: React.FC = () => {
     const aiConfig = getStoredAISettings();
 
     if (aiSolveMode === 'selected_only' && selectedQuestionsToSolve.length === 0) {
-      alert('Vui lòng tích chọn ít nhất 1 câu hỏi cần giải.');
+      toast.error('Vui lòng tích chọn ít nhất 1 câu hỏi cần giải.');
       return;
     }
 
@@ -1745,7 +1749,7 @@ export const ExamCreator: React.FC = () => {
   // Add question via manual form
   const handleAddManualQuestion = () => {
     if (!manualContent.trim()) {
-      alert('Vui lòng nhập nội dung câu hỏi.');
+      toast.error('Vui lòng nhập nội dung câu hỏi.');
       return;
     }
 
@@ -1814,33 +1818,7 @@ export const ExamCreator: React.FC = () => {
     setInputMode(mode);
   };
 
-  // Save Exam
-  const handleSaveExam = async () => {
-    if (questions.length === 0) {
-      alert('Chưa có câu hỏi nào trong đề thi!');
-      return;
-    }
-
-    // Validate complete exam diagnostics
-    if (validationSummary.error_count > 0) {
-      const errorList = validationSummary.detailed_issues
-        .filter((d) => d.has_error)
-        .map((d) => `• Câu ${d.order_index} (${d.part_type === 'PART_I' ? 'Phần I' : 'Phần II'}): ${d.issues.find((i) => i.type === 'error')?.message}`)
-        .slice(0, 8)
-        .join('\n');
-      const moreCount = validationSummary.error_count > 8 ? `\n...và ${validationSummary.error_count - 8} lỗi khác.` : '';
-
-      const confirmSave = window.confirm(
-        `⚠️ CẢNH BÁO ĐỊNH DẠNG ĐỀ THI:\n\nĐề thi hiện có ${validationSummary.error_count} câu hỏi có lỗi chưa hoàn chỉnh:\n${errorList}${moreCount}\n\nThầy có chắc chắn muốn tiếp tục lưu vào hệ thống không?`
-      );
-      if (!confirmSave) {
-        if (validationSummary.error_question_indices.length > 0) {
-          handleJumpToErrorQuestion(validationSummary.error_question_indices[0]);
-        }
-        return;
-      }
-    }
-
+  const executeSaveExam = async () => {
     setIsSaving(true);
     setErrorMsg('');
 
@@ -1862,7 +1840,7 @@ export const ExamCreator: React.FC = () => {
         questions: questions,
       });
 
-      alert(editId ? 'Cập nhật đề thi thành công!' : 'Tạo và xuất bản đề thi thành công!');
+      toast.success(editId ? 'Cập nhật đề thi thành công!' : 'Tạo và xuất bản đề thi thành công!');
       navigate('/teacher');
     } catch (err: any) {
       console.error(err);
@@ -1870,6 +1848,33 @@ export const ExamCreator: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveExam = async () => {
+    if (questions.length === 0) {
+      toast.error('Chưa có câu hỏi nào trong đề thi!');
+      return;
+    }
+
+    // Validate complete exam diagnostics
+    if (validationSummary.error_count > 0) {
+      const errorList = validationSummary.detailed_issues
+        .filter((d) => d.has_error)
+        .map((d) => `• Câu ${d.order_index} (${d.part_type === 'PART_I' ? 'Phần I' : 'Phần II'}): ${d.issues.find((i) => i.type === 'error')?.message}`)
+        .slice(0, 8)
+        .join('\n');
+      const moreCount = validationSummary.error_count > 8 ? `\n...và ${validationSummary.error_count - 8} lỗi khác.` : '';
+
+      setConfirmConfig({
+        isOpen: true,
+        title: 'Cảnh báo định dạng đề thi',
+        message: `Đề thi hiện có ${validationSummary.error_count} câu hỏi có lỗi chưa hoàn chỉnh:\n${errorList}${moreCount}\n\nThầy có chắc chắn muốn tiếp tục lưu vào hệ thống không?`,
+        onConfirm: executeSaveExam
+      });
+      return;
+    }
+
+    executeSaveExam();
   };
 
   const part1List = questions.filter((q) => q.part_type === 'PART_I');

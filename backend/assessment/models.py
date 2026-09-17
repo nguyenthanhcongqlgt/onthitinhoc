@@ -137,3 +137,22 @@ class ViolationLog(models.Model):
 
     def __str__(self):
         return f"Session {self.session.id} - {self.get_violation_type_display()} (Lần {self.violation_number})"
+
+class ExamBroadcast(models.Model):
+    sitting = models.ForeignKey(
+        'exams.ExamSitting',
+        on_delete=models.CASCADE,
+        related_name='broadcasts',
+        verbose_name='Ca thi'
+    )
+    message = models.TextField(verbose_name='Nội dung thông báo')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Thời gian tạo')
+
+    class Meta:
+        verbose_name = 'Thông báo phiên thi'
+        verbose_name_plural = 'Thông báo phiên thi'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Broadcast for Session {self.sitting_id}"
+

@@ -18,7 +18,7 @@ interface QuestionCardPart1Props {
   showAnswerKey?: boolean;
 }
 
-export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
+export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = React.memo(({
   question,
   selectedOptionId,
   onSelectOption,
@@ -245,4 +245,4 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = ({
       )}
     </div>
   );
-};
+});

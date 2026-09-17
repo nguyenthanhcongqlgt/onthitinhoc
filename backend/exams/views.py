@@ -319,16 +319,76 @@ class ExamViewSet(viewsets.ModelViewSet):
             ]
         })
 
+    @action(detail=True, methods=['get'])
+    def export_docx(self, request, pk=None):
+        from docx import Document
+        from django.http import HttpResponse
+        import io
+
+        exam = self.get_object()
+        document = Document()
+        
+        # Add Exam Title
+        document.add_heading(exam.title, 0)
+        
+        if exam.description:
+            document.add_paragraph(exam.description)
+            
+        questions = exam.questions.all().order_by('order_index', 'id')
+        for q in questions:
+            # Question content
+            p = document.add_paragraph()
+            p.add_run(f"Câu {q.order_index}: ").bold = True
+            p.add_run(q.content)
+            
+            # Question options
+            options = q.options.all().order_by('order_index', 'id')
+            labels = ['A', 'B', 'C', 'D', 'E', 'F']
+            for idx, opt in enumerate(options):
+                lbl = labels[idx] if idx < len(labels) else str(idx)
+                # If label exists in option, use it, otherwise use generated label
+                lbl_to_use = opt.label if opt.label else lbl
+                opt_p = document.add_paragraph()
+                opt_p.add_run(f"{lbl_to_use}. {opt.content}")
+
+        # Save to BytesIO
+        f = io.BytesIO()
+        document.save(f)
+        f.seek(0)
+        
+        response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = f'attachment; filename="exam.docx"'
+        return response
+
 
 class QuestionViewSet(viewsets.ModelViewSet):
     serializer_class = QuestionSerializer
     permission_classes = [IsTeacherOrAdmin]  # Chặn student xem đáp án (is_correct/explanation)
 
     def get_queryset(self):
+        user = self.request.user
+        qs = Question.objects.all()
+        
+        # Admin thấy toàn bộ, Teacher chỉ thấy câu hỏi thuộc đề của mình hoặc được share
+        if user.role != 'ADMIN':
+            qs = qs.filter(
+                models.Q(exam__creator=user) | 
+                models.Q(exam__shared_teachers=user) |
+                models.Q(exam__is_shared_with_all_teachers=True)
+            ).distinct()
+
         exam_id = self.request.query_params.get('exam_id')
         if exam_id:
-            return Question.objects.filter(exam_id=exam_id)
-        return Question.objects.all()
+            qs = qs.filter(exam_id=exam_id)
+        return qs
+
+    def perform_create(self, serializer):
+        exam = serializer.validated_data.get('exam')
+        user = self.request.user
+        if user.role != 'ADMIN' and exam.creator != user and user not in exam.shared_teachers.all() and not exam.is_shared_with_all_teachers:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Bạn không có quyền thêm câu hỏi vào đề thi này.")
+        serializer.save()
 
 
 class VerifyAccessCodeView(APIView):
@@ -1713,6 +1773,32 @@ class ExamSittingViewSet(viewsets.ModelViewSet):
             "summary": summary,
             "results": results
         })
+
+    @action(detail=True, methods=['get', 'post'])
+    def broadcasts(self, request, pk=None):
+        sitting = self.get_object()
+        from assessment.models import ExamBroadcast
+        
+        if request.method == 'GET':
+            broadcasts = ExamBroadcast.objects.filter(sitting=sitting).order_by('-created_at')
+            data = [{"id": b.id, "message": b.message, "created_at": b.created_at} for b in broadcasts]
+            return Response(data)
+            
+        elif request.method == 'POST':
+            if request.user.role not in ['ADMIN', 'TEACHER'] and not request.user.is_superuser:
+                return Response({"detail": "Không có quyền gửi thông báo."}, status=status.HTTP_403_FORBIDDEN)
+                
+            message = request.data.get('message', '').strip()
+            if not message:
+                return Response({"detail": "Nội dung không được để trống."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            broadcast = ExamBroadcast.objects.create(sitting=sitting, message=message)
+            return Response({
+                "id": broadcast.id,
+                "message": broadcast.message,
+                "created_at": broadcast.created_at
+            }, status=status.HTTP_201_CREATED)
+
 
 
 

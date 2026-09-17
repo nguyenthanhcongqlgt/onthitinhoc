@@ -124,7 +124,10 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 type="text"
                 required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (e.target.value.trim()) setError('');
+                }}
                 placeholder="vd: 12A1 (HSG Tin học), Đội tuyển Tỉnh 2025"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />

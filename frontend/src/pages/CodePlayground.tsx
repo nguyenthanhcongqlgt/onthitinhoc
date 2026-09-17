@@ -24,6 +24,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { ThemeToggle } from '../components/common/ThemeToggle';
 import { CodeEditor } from '../components/common/CodeEditor';
+import { ConfirmModal } from '../components/common/ConfirmModal';
+import { toast } from 'sonner';
 import {
   PlaygroundLanguage,
   ExecutionResult,
@@ -68,6 +70,7 @@ export const CodePlayground: React.FC = () => {
   const [sqlPreset, setSqlPreset] = useState<string>('hoc_sinh');
   const [copied, setCopied] = useState<boolean>(false);
   const [activeHtmlTab, setActiveHtmlTab] = useState<'html' | 'css'>('html');
+  const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
 
   useEffect(() => {
     if (queryCode && queryCode.trim()) {
@@ -147,8 +150,22 @@ export const CodePlayground: React.FC = () => {
       await initSqlEngine(sqlPreset);
       handleRunCode();
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e.message);
     }
+  };
+
+  const executeClearCode = () => {
+    const isHtmlCss = activeLang === 'html-css';
+    if (isHtmlCss) {
+      if (activeHtmlTab === 'css') {
+        setCssCode('');
+      } else {
+        setCode('');
+      }
+    } else {
+      setCode('');
+    }
+    setResult(null);
   };
 
   const handleClearCode = () => {
@@ -157,28 +174,11 @@ export const CodePlayground: React.FC = () => {
     const currentCode = isHtmlCss ? (activeHtmlTab === 'css' ? cssCode : code) : code;
 
     if (!currentCode.trim()) {
-      if (isHtmlCss) {
-        setCode('');
-        setCssCode('');
-      } else {
-        setCode('');
-      }
-      setResult(null);
+      executeClearCode();
       return;
     }
 
-    if (window.confirm(`Bạn có chắc chắn muốn xóa sạch ${targetName} đang soạn thảo không?`)) {
-      if (isHtmlCss) {
-        if (activeHtmlTab === 'css') {
-          setCssCode('');
-        } else {
-          setCode('');
-        }
-      } else {
-        setCode('');
-      }
-      setResult(null);
-    }
+    setIsConfirmClearOpen(true);
   };
 
   const handleCopyCode = () => {
@@ -681,6 +681,19 @@ export const CodePlayground: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <ConfirmModal
+        isOpen={isConfirmClearOpen}
+        title="Xác nhận xóa"
+        message={`Bạn có chắc chắn muốn xóa sạch ${activeLang === 'html-css' ? (activeHtmlTab === 'css' ? 'Mã CSS' : 'Mã HTML') : 'Mã nguồn'} đang soạn thảo không?`}
+        confirmText="Xóa"
+        cancelText="Hủy"
+        isDestructive={true}
+        onConfirm={() => {
+          executeClearCode();
+        }}
+        onCancel={() => setIsConfirmClearOpen(false)}
+      />
     </div>
   );
 };

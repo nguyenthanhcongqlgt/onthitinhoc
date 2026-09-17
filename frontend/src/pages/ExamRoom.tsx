@@ -104,6 +104,11 @@ export const ExamRoom: React.FC = () => {
   // Dispute / Report Question Modal State
   const [disputeQuestion, setDisputeQuestion] = useState<{ id: number; number: number; content: string } | null>(null);
 
+  // Broadcast State
+  const [broadcastMessage, setBroadcastMessage] = useState<string | null>(null);
+  const [showBroadcastToast, setShowBroadcastToast] = useState<boolean>(false);
+  const [latestBroadcastId, setLatestBroadcastId] = useState<number | null>(null);
+
   // Load Exam Session & Restore LocalStorage Cache / Server Draft
   useEffect(() => {
     const initExam = async () => {
@@ -232,6 +237,30 @@ export const ExamRoom: React.FC = () => {
     const interval = setInterval(syncDraftToServer, 15000);
     return () => clearInterval(interval);
   }, [hasStarted, syncDraftToServer, payload]);
+
+  // Broadcast Polling (every 15s) for Students
+  useEffect(() => {
+    if (!hasStarted || !payload || isPreview || user?.role !== 'STUDENT') return;
+    const fetchBroadcasts = async () => {
+      try {
+        const broadcasts = await assessmentApi.getBroadcasts(payload.session_id);
+        if (broadcasts.length > 0) {
+          const latest = broadcasts[0]; // Assuming descending order by created_at
+          if (latest.id !== latestBroadcastId) {
+            setLatestBroadcastId(latest.id);
+            setBroadcastMessage(latest.message);
+            setShowBroadcastToast(true);
+            setTimeout(() => setShowBroadcastToast(false), 15000);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch broadcasts:', err);
+      }
+    };
+    fetchBroadcasts();
+    const intervalId = setInterval(fetchBroadcasts, 15000);
+    return () => clearInterval(intervalId);
+  }, [hasStarted, payload, isPreview, user?.role, latestBroadcastId]);
 
   // Network Connectivity Event Listeners
   useEffect(() => {
@@ -582,6 +611,40 @@ export const ExamRoom: React.FC = () => {
       handleSubmitExam();
     },
   });
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Avoid triggering when user is typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'Escape') {
+        setShowSimulatedResultModal(false);
+        setShowBranchModal(false);
+        setShowSubmitModal(false);
+        setShowIncompleteModal(false);
+        setDisputeQuestion(null);
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } else if (['a', 'b', 'c', 'd'].includes(e.key.toLowerCase())) {
+        const hoveredOrFocused = document.querySelector('[id^="question-"]:hover') || document.activeElement?.closest('[id^="question-"]');
+        if (hoveredOrFocused) {
+          const qIdMatch = hoveredOrFocused.id.match(/^question-(\d+)$/);
+          if (qIdMatch) {
+            const options = Array.from(hoveredOrFocused.querySelectorAll('div[role="button"]'));
+            const keyMap: Record<string, number> = { 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+            const idx = keyMap[e.key.toLowerCase()];
+            if (idx !== undefined && options[idx]) {
+               (options[idx] as HTMLElement).click();
+            }
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleStartExamClick = async () => {
     setHasStarted(true);
@@ -1897,6 +1960,28 @@ export const ExamRoom: React.FC = () => {
           questionContent={disputeQuestion.content}
           sessionId={payload.session_id}
         />
+      )}
+
+      {/* Broadcast Message Toast */}
+      {showBroadcastToast && broadcastMessage && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-5 duration-300">
+          <div className="bg-amber-100 border border-amber-300 text-amber-900 rounded-2xl p-4 shadow-2xl shadow-amber-900/20 max-w-lg w-[90vw] flex items-start gap-3 relative">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-200">
+              <AlertTriangle className="h-5 w-5 text-amber-700" />
+            </div>
+            <div className="flex-1 pr-6 pt-0.5">
+              <h4 className="font-bold text-sm mb-0.5 text-amber-900">Thông báo từ Giám thị</h4>
+              <p className="text-xs text-amber-800 leading-relaxed whitespace-pre-wrap">{broadcastMessage}</p>
+            </div>
+            <button 
+              onClick={() => setShowBroadcastToast(false)}
+              className="absolute top-2 right-2 p-1.5 hover:bg-amber-200 rounded-full text-amber-600 transition-colors"
+              title="Đóng thông báo"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

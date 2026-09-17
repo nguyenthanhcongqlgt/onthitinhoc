@@ -1,27 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { authApi, examsApi, assessmentApi, classApi, bankApi, sittingsApi, foldersApi } from '../services/api';
 import { User, ExamInfo, ExamFolder, ExamSessionDetail, SystemStats, QuestionFeedback, ClassRoom, QuestionCategory, BankQuestion, ExamSitting } from '../types';
-import { DocxImportModal } from '../components/exam/DocxImportModal';
-import { AssignExamModal } from '../components/exam/AssignExamModal';
-import { ShareExamModal } from '../components/exam/ShareExamModal';
-import { CreateSittingModal } from '../components/exam/CreateSittingModal';
-import { SittingResultsModal } from '../components/exam/SittingResultsModal';
-import { AISettingsModal } from '../components/common/AISettingsModal';
-import { LiveProctorModal } from '../components/exam/LiveProctorModal';
-import { ExamAnalyticsModal } from '../components/exam/ExamAnalyticsModal';
-import { BulkUserImportModal } from '../components/admin/BulkUserImportModal';
-import { ResetPasswordModal } from '../components/admin/ResetPasswordModal';
-import { EditUserModal } from '../components/admin/EditUserModal';
-import { CreateClassModal } from '../components/classroom/CreateClassModal';
-import { ClassManagementModal } from '../components/classroom/ClassManagementModal';
-import { CreateCategoryModal } from '../components/bank/CreateCategoryModal';
-import { CreateBankQuestionModal } from '../components/bank/CreateBankQuestionModal';
-import { CreateFolderModal } from '../components/exam/CreateFolderModal';
-import { MoveExamModal } from '../components/exam/MoveExamModal';
-import { TwoFactorModal } from '../components/common/TwoFactorModal';
+const ConfirmModal = React.lazy(() => import('../components/common/ConfirmModal').then(m => ({ default: m.ConfirmModal })));
+const DocxImportModal = React.lazy(() => import('../components/exam/DocxImportModal').then(m => ({ default: m.DocxImportModal })));
+const AssignExamModal = React.lazy(() => import('../components/exam/AssignExamModal').then(m => ({ default: m.AssignExamModal })));
+const ShareExamModal = React.lazy(() => import('../components/exam/ShareExamModal').then(m => ({ default: m.ShareExamModal })));
+const CreateSittingModal = React.lazy(() => import('../components/exam/CreateSittingModal').then(m => ({ default: m.CreateSittingModal })));
+const SittingResultsModal = React.lazy(() => import('../components/exam/SittingResultsModal').then(m => ({ default: m.SittingResultsModal })));
+const AISettingsModal = React.lazy(() => import('../components/common/AISettingsModal').then(m => ({ default: m.AISettingsModal })));
+const LiveProctorModal = React.lazy(() => import('../components/exam/LiveProctorModal').then(m => ({ default: m.LiveProctorModal })));
+const ExamAnalyticsModal = React.lazy(() => import('../components/exam/ExamAnalyticsModal').then(m => ({ default: m.ExamAnalyticsModal })));
+const BulkUserImportModal = React.lazy(() => import('../components/admin/BulkUserImportModal').then(m => ({ default: m.BulkUserImportModal })));
+const ResetPasswordModal = React.lazy(() => import('../components/admin/ResetPasswordModal').then(m => ({ default: m.ResetPasswordModal })));
+const EditUserModal = React.lazy(() => import('../components/admin/EditUserModal').then(m => ({ default: m.EditUserModal })));
+const CreateClassModal = React.lazy(() => import('../components/classroom/CreateClassModal').then(m => ({ default: m.CreateClassModal })));
+const ClassManagementModal = React.lazy(() => import('../components/classroom/ClassManagementModal').then(m => ({ default: m.ClassManagementModal })));
+const CreateCategoryModal = React.lazy(() => import('../components/bank/CreateCategoryModal').then(m => ({ default: m.CreateCategoryModal })));
+const CreateBankQuestionModal = React.lazy(() => import('../components/bank/CreateBankQuestionModal').then(m => ({ default: m.CreateBankQuestionModal })));
+const CreateFolderModal = React.lazy(() => import('../components/exam/CreateFolderModal').then(m => ({ default: m.CreateFolderModal })));
+const MoveExamModal = React.lazy(() => import('../components/exam/MoveExamModal').then(m => ({ default: m.MoveExamModal })));
+const TwoFactorModal = React.lazy(() => import('../components/common/TwoFactorModal').then(m => ({ default: m.TwoFactorModal })));
+
+import { SystemStatsTab } from '../components/admin/SystemStatsTab';
+import { SittingsTab } from '../components/exam/SittingsTab';
+import { BankTab } from '../components/bank/BankTab';
 import { ThemeToggle } from '../components/common/ThemeToggle';
+import { PaginationBar } from '../components/common/PaginationBar';
 import {
   Home,
   GraduationCap,
@@ -69,11 +76,14 @@ import {
   FolderOpen,
   FolderSymlink,
   BookOpen,
+  Download,
 } from 'lucide-react';
 
 export const TeacherDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, isAdmin } = useAuth();
+
+  const [confirmConfig, setConfirmConfig] = useState<{isOpen: boolean, title: string, message: string, onConfirm: () => void, isDestructive?: boolean}>({isOpen: false, title: '', message: '', onConfirm: () => {}});
 
   const [pendingTeachers, setPendingTeachers] = useState<User[]>([]);
   const [exams, setExams] = useState<ExamInfo[]>([]);
@@ -110,9 +120,13 @@ export const TeacherDashboard: React.FC = () => {
   const [classGradeFilter, setClassGradeFilter] = useState<string>('ALL');
 
   // Active Tab for Admin / Teacher
-  const [activeTab, setActiveTab] = useState<
-    'EXAMS' | 'SITTINGS' | 'SESSIONS' | 'FEEDBACKS' | 'CLASSES' | 'BANK' | 'USERS' | 'TEACHERS' | 'STATS'
-  >('EXAMS');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get('tab')?.toUpperCase() || 'EXAMS') as 
+    'EXAMS' | 'SITTINGS' | 'SESSIONS' | 'FEEDBACKS' | 'CLASSES' | 'BANK' | 'USERS' | 'TEACHERS' | 'STATS';
+  
+  const setActiveTab = (tab: typeof activeTab) => {
+    setSearchParams({ tab: tab.toLowerCase() });
+  };
 
   // Exam classification & ownership filter states
   const [examTypeFilter, setExamTypeFilter] = useState<'ALL' | 'HSG' | 'TN_THPT'>('ALL');
@@ -147,6 +161,21 @@ export const TeacherDashboard: React.FC = () => {
   const [folderScopeTab, setFolderScopeTab] = useState<'ALL' | 'SHARED' | 'MY_FOLDERS'>('ALL');
   const [folderSearch, setFolderSearch] = useState<string>('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+
+  // Exam Bank: Sorting & Pagination
+  const [examSortBy, setExamSortBy] = useState<string>('newest');
+  const [examPage, setExamPage] = useState<number>(1);
+  const EXAMS_PER_PAGE = 12;
+
+  // Question Bank: Search, Filter, Sort & Pagination
+  const [bankSearch, setBankSearch] = useState<string>('');
+  const [selectedBankCategoryId, setSelectedBankCategoryId] = useState<number | 'ALL'>('ALL');
+  const [bankPartFilter, setBankPartFilter] = useState<'ALL' | 'PART_I' | 'PART_II'>('ALL');
+  const [bankBranchFilter, setBankBranchFilter] = useState<string>('ALL');
+  const [bankDifficultyFilter, setBankDifficultyFilter] = useState<string>('ALL');
+  const [bankSortBy, setBankSortBy] = useState<string>('newest');
+  const [bankPage, setBankPage] = useState<number>(1);
+  const BANK_PER_PAGE = 15;
 
   const fetchData = async () => {
     try {
@@ -190,39 +219,64 @@ export const TeacherDashboard: React.FC = () => {
     fetchData();
   }, [isAdmin]);
 
+  // Reset exam page when filters change
+  useEffect(() => { setExamPage(1); }, [examTypeFilter, ownershipFilter, examSearch, selectedFolderId, examSortBy]);
+
+  // Reset bank page when filters change
+  useEffect(() => { setBankPage(1); }, [bankSearch, selectedBankCategoryId, bankPartFilter, bankBranchFilter, bankDifficultyFilter, bankSortBy]);
+
   const handleToggleUserStatus = async (targetUser: User, newStatus: 'ACTIVE' | 'REJECTED' | 'PENDING') => {
     try {
       await authApi.toggleUserStatus(targetUser.id, newStatus);
-      setActionMsg(`Đã cập nhật trạng thái tài khoản ${targetUser.username} thành công.`);
+      toast.success(`Đã cập nhật trạng thái tài khoản ${targetUser.username} thành công.`);
       fetchData();
-      setTimeout(() => setActionMsg(''), 3000);
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Thao tác thất bại.');
+      toast.error(err.response?.data?.detail || 'Thao tác thất bại.');
     }
   };
 
   const handleApproveTeacher = async (teacherId: number, status: 'ACTIVE' | 'REJECTED') => {
     try {
       await authApi.approveTeacher(teacherId, status);
-      setActionMsg(`Đã cập nhật trạng thái giáo viên thành ${status === 'ACTIVE' ? 'Hoạt động' : 'Từ chối'}.`);
+      toast.success(`Đã cập nhật trạng thái giáo viên thành ${status === 'ACTIVE' ? 'Hoạt động' : 'Từ chối'}.`);
       fetchData();
-      setTimeout(() => setActionMsg(''), 3000);
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Thao tác thất bại.');
+      toast.error(err.response?.data?.detail || 'Thao tác thất bại.');
     }
   };
 
   const handleDeleteExam = async (examId: number, examTitle: string) => {
-    if (!window.confirm(`Thầy có chắc chắn muốn xóa đề thi "${examTitle}" không?\nToàn bộ câu hỏi trong đề này sẽ bị xóa khỏi hệ thống.`)) {
-      return;
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Xác nhận xóa',
+      message: `Thầy có chắc chắn muốn xóa đề thi "${examTitle}" không?\nToàn bộ câu hỏi trong đề này sẽ bị xóa khỏi hệ thống.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await examsApi.deleteExam(examId);
+          toast.success(`Đã xóa đề thi "${examTitle}" thành công.`);
+          fetchData();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || 'Xóa đề thi thất bại.');
+        }
+      }
+    });
+  };
+
+  const handleExportDocx = async (examId: number, examTitle: string) => {
     try {
-      await examsApi.deleteExam(examId);
-      setActionMsg(`Đã xóa đề thi "${examTitle}" thành công.`);
-      fetchData();
-      setTimeout(() => setActionMsg(''), 3000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Xóa đề thi thất bại.');
+      toast.loading('Đang xuất file Word...', { id: 'export-docx' });
+      const blob = await examsApi.exportDocx(examId);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${examTitle}.docx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Xuất file thành công!', { id: 'export-docx' });
+    } catch (err) {
+      toast.error('Có lỗi xảy ra khi xuất file.', { id: 'export-docx' });
     }
   };
 
@@ -240,20 +294,24 @@ export const TeacherDashboard: React.FC = () => {
 
   const handleDeleteFolder = async (folder: ExamFolder, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm(`Thầy/Cô có chắc chắn muốn xóa thư mục "${folder.name}" không?\n\n(Tất cả bài kiểm tra bên trong sẽ được chuyển an toàn ra thư mục cha hoặc mục Chưa phân loại, không bị mất đề thi).`)) {
-      return;
-    }
-    try {
-      await foldersApi.deleteFolder(folder.id);
-      setActionMsg(`Đã xóa thư mục "${folder.name}" thành công.`);
-      if (selectedFolderId === folder.id) {
-        setSelectedFolderId('ALL');
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Xác nhận xóa',
+      message: `Thầy/Cô có chắc chắn muốn xóa thư mục "${folder.name}" không?\n\n(Tất cả bài kiểm tra bên trong sẽ được chuyển an toàn ra thư mục cha hoặc mục Chưa phân loại, không bị mất đề thi).`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await foldersApi.deleteFolder(folder.id);
+          toast.success(`Đã xóa thư mục "${folder.name}" thành công.`);
+          if (selectedFolderId === folder.id) {
+            setSelectedFolderId('ALL');
+          }
+          fetchData();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || 'Xóa thư mục thất bại.');
+        }
       }
-      fetchData();
-      setTimeout(() => setActionMsg(''), 3000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Xóa thư mục thất bại.');
-    }
+    });
   };
 
   const toggleExpandFolder = (folderId: number, e: React.MouseEvent) => {
@@ -262,45 +320,56 @@ export const TeacherDashboard: React.FC = () => {
   };
 
   const handleDeleteClass = async (classId: number, className: string) => {
-    if (!window.confirm(`Thầy/Cô có chắc chắn muốn xóa lớp học "${className}" không?\nThao tác này sẽ giải tán lớp học khỏi hệ thống.`)) {
-      return;
-    }
-    try {
-      await classApi.deleteClass(classId);
-      setActionMsg(`Đã xóa lớp học "${className}" thành công.`);
-      fetchData();
-      setTimeout(() => setActionMsg(''), 4000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Xóa lớp học thất bại.');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Xác nhận xóa',
+      message: `Thầy/Cô có chắc chắn muốn xóa lớp học "${className}" không?\nThao tác này sẽ giải tán lớp học khỏi hệ thống.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await classApi.deleteClass(classId);
+          toast.success(`Đã xóa lớp học "${className}" thành công.`);
+          fetchData();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || 'Xóa lớp học thất bại.');
+        }
+      }
+    });
   };
 
   const handleDeleteSitting = async (sittingId: number, sittingName: string) => {
-    if (!window.confirm(`Thầy/Cô có chắc chắn muốn xóa Ca thi "${sittingName}" không?\n\nLưu ý: Các đề thi liên kết vẫn được giữ nguyên an toàn trong Ngân hàng đề, chỉ xóa thiết lập phòng thi và phân bổ của ca này.`)) {
-      return;
-    }
-    try {
-      await sittingsApi.delete(sittingId);
-      setActionMsg(`Đã xóa ca thi "${sittingName}" thành công.`);
-      fetchData();
-      setTimeout(() => setActionMsg(''), 3000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Xóa ca thi thất bại.');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Xác nhận xóa',
+      message: `Thầy/Cô có chắc chắn muốn xóa Ca thi "${sittingName}" không?\n\nLưu ý: Các đề thi liên kết vẫn được giữ nguyên an toàn trong Ngân hàng đề, chỉ xóa thiết lập phòng thi và phân bổ của ca này.`,
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await sittingsApi.delete(sittingId);
+          toast.success(`Đã xóa ca thi "${sittingName}" thành công.`);
+          fetchData();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || 'Xóa ca thi thất bại.');
+        }
+      }
+    });
   };
 
   const handleRegradeExam = async (examId: number, examTitle: string) => {
-    if (!window.confirm(`Thầy có muốn chấm lại toàn bộ các bài thi của học sinh cho đề "${examTitle}" không?\n\nHệ thống sẽ đối chiếu lại câu trả lời của từng học sinh với đáp án mới nhất và tự động cập nhật lại toàn bộ điểm số, xếp hạng và báo cáo năng lực.`)) {
-      return;
-    }
-    try {
-      const res = await assessmentApi.regradeExam(examId);
-      setActionMsg(res.message || 'Đã chấm lại toàn bộ bài làm của học sinh thành công.');
-      fetchData();
-      setTimeout(() => setActionMsg(''), 6000);
-    } catch (err: any) {
-      alert(err.response?.data?.detail || 'Chấm lại bài thi thất bại.');
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: 'Xác nhận chấm lại',
+      message: `Thầy có muốn chấm lại toàn bộ các bài thi của học sinh cho đề "${examTitle}" không?\n\nHệ thống sẽ đối chiếu lại câu trả lời của từng học sinh với đáp án mới nhất và tự động cập nhật lại toàn bộ điểm số, xếp hạng và báo cáo năng lực.`,
+      onConfirm: async () => {
+        try {
+          const res = await assessmentApi.regradeExam(examId);
+          toast.success(res.message || 'Đã chấm lại toàn bộ bài làm của học sinh thành công.');
+          fetchData();
+        } catch (err: any) {
+          toast.error(err.response?.data?.detail || 'Chấm lại bài thi thất bại.');
+        }
+      }
+    });
   };
 
   return (
@@ -735,7 +804,20 @@ export const TeacherDashboard: React.FC = () => {
               if (!matchTitle && !matchClasses && !matchCreator && !matchFolder) return false;
             }
             return true;
+          }).sort((a, b) => {
+            switch (examSortBy) {
+              case 'oldest': return Number(a.id) - Number(b.id);
+              case 'name_az': return (a.title || '').localeCompare(b.title || '', 'vi');
+              case 'name_za': return (b.title || '').localeCompare(a.title || '', 'vi');
+              case 'questions_desc': return (Number(b.questions_count) || 0) - (Number(a.questions_count) || 0);
+              case 'questions_asc': return (Number(a.questions_count) || 0) - (Number(b.questions_count) || 0);
+              case 'newest':
+              default: return Number(b.id) - Number(a.id);
+            }
           });
+
+          const totalExamPages = Math.ceil(displayedExams.length / EXAMS_PER_PAGE);
+          const paginatedExams = displayedExams.slice((examPage - 1) * EXAMS_PER_PAGE, examPage * EXAMS_PER_PAGE);
 
           return (
             <section className="space-y-5">
@@ -1094,9 +1176,19 @@ export const TeacherDashboard: React.FC = () => {
                         </button>
                       </div>
 
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1">
-                        <Lock className="h-3 w-3 text-slate-500" />
-                        <span>Đề riêng tư bảo mật theo từng Giáo viên</span>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={examSortBy}
+                          onChange={(e) => setExamSortBy(e.target.value)}
+                          className="rounded-xl border border-slate-700 bg-slate-950 text-xs text-slate-300 px-3 py-1.5 focus:border-blue-500 focus:outline-none cursor-pointer"
+                        >
+                          <option value="newest">Mới nhất</option>
+                          <option value="oldest">Cũ nhất</option>
+                          <option value="name_az">Tên A → Z</option>
+                          <option value="name_za">Tên Z → A</option>
+                          <option value="questions_desc">Câu hỏi (nhiều → ít)</option>
+                          <option value="questions_asc">Câu hỏi (ít → nhiều)</option>
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -1124,8 +1216,9 @@ export const TeacherDashboard: React.FC = () => {
                       </button>
                     </div>
                   ) : (
+                    <>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                      {displayedExams.map((exam) => {
+                      {paginatedExams.map((exam) => {
                         const isHSG = (exam.exam_type || (exam.matrix_preset === 'BGD_2025' ? 'TN_THPT' : 'HSG')) === 'HSG';
                         const canEditOrDelete = exam.is_owner || isAdmin;
 
@@ -1349,12 +1442,29 @@ export const TeacherDashboard: React.FC = () => {
                                       <Trash2 className="h-4 w-4" />
                                     </button>
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleExportDocx(exam.id, exam.title)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-green-400 hover:bg-green-500/10 transition-all"
+                                    title="Xuất file Word (.docx)"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </button>
                                 </div>
                               </div>
                           </div>
                         );
                       })}
                     </div>
+                    <PaginationBar
+                      currentPage={examPage}
+                      totalPages={totalExamPages}
+                      totalItems={displayedExams.length}
+                      itemsPerPage={EXAMS_PER_PAGE}
+                      onPageChange={setExamPage}
+                      label="đề thi"
+                    />
+                    </>
                   )}
                 </div>
               </div>
@@ -1364,102 +1474,15 @@ export const TeacherDashboard: React.FC = () => {
 
         {/* TAB 1.5: SITTINGS (Ca Thi) */}
         {activeTab === 'SITTINGS' && (
-          <section className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-6 w-6 text-purple-400" />
-                <div>
-                  <h3 className="text-xl font-bold text-white uppercase">Quản lý Ca Thi (Tổ chức thi tập trung)</h3>
-                  <p className="text-xs text-slate-400 mt-1">Gom nhiều đề thi thành một phòng thi, hỗ trợ phát đề ngẫu nhiên hoặc xoay vòng.</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsCreateSittingModalOpen(true)}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg hover:from-purple-500 hover:to-indigo-500 transition-all"
-              >
-                <Plus className="h-4 w-4" /> Tạo Ca Thi Mới
-              </button>
-            </div>
-
-            {sittings.length === 0 ? (
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-12 text-center text-sm text-slate-500">
-                <Users className="h-12 w-12 text-slate-700 mx-auto mb-4" />
-                Chưa có Ca thi nào. Hãy tạo Ca thi để tổ chức thi tự động phát nhiều mã đề!
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {sittings.map(sitting => (
-                  <div key={sitting.id} className="rounded-2xl border border-slate-800 bg-slate-950 flex flex-col hover:border-slate-700 transition-all">
-                    <div className="p-5 border-b border-slate-800">
-                      <div className="flex justify-between items-start mb-3">
-                        <span className={`px-2 py-1 rounded text-[10px] font-bold ${sitting.is_active ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-800/50' : 'bg-amber-950/50 text-amber-400 border border-amber-800/50'}`}>
-                          {sitting.is_active ? 'ĐANG MỞ' : 'BẢN NHÁP'}
-                        </span>
-                        <span className="font-mono bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-bold text-[11px] border border-purple-500/30">
-                          MÃ: {sitting.room_code}
-                        </span>
-                      </div>
-                      <h4 className="font-bold text-white text-base mb-1">{sitting.name}</h4>
-                      <p className="text-xs text-slate-400 mb-4 line-clamp-2">{sitting.description || 'Không có mô tả'}</p>
-                      
-                      <div className="grid grid-cols-2 gap-3 mb-2">
-                        <div className="bg-slate-900 rounded-lg p-2.5 border border-slate-800 flex items-center gap-2">
-                          <Layers className="h-4 w-4 text-indigo-400" />
-                          <div><div className="text-[10px] text-slate-500 uppercase">Số đề thi</div><div className="text-xs font-bold text-slate-300">{sitting.exams_count} đề</div></div>
-                        </div>
-                        <div className="bg-slate-900 rounded-lg p-2.5 border border-slate-800 flex items-center gap-2">
-                          <Users className="h-4 w-4 text-blue-400" />
-                          <div><div className="text-[10px] text-slate-500 uppercase">HS đã phân</div><div className="text-xs font-bold text-slate-300">{sitting.total_students} HS</div></div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 bg-slate-900/30 flex items-center gap-2 justify-end rounded-b-2xl">
-                      <button 
-                        onClick={async () => {
-                          if (sitting.is_active) {
-                            if(window.confirm('Thu hồi ca thi này? Học sinh sẽ không thể vào thi nữa.')) {
-                              await sittingsApi.deactivate(sitting.id);
-                              fetchData();
-                            }
-                          } else {
-                            await sittingsApi.activate(sitting.id);
-                            fetchData();
-                          }
-                        }}
-                        className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${sitting.is_active ? 'bg-slate-900 text-slate-400 border-slate-700 hover:text-white' : 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30'}`}
-                      >
-                        {sitting.is_active ? 'Thu hồi' : 'Kích hoạt'}
-                      </button>
-                      <button 
-                        onClick={() => {
-                          setSittingToEdit(sitting);
-                          setIsCreateSittingModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 rounded-lg bg-amber-600/20 text-amber-400 border border-amber-500/30 hover:bg-amber-600/30 text-xs font-bold transition-all"
-                      >
-                        Sửa
-                      </button>
-                      <button 
-                        onClick={() => setSelectedSittingForResults(sitting)}
-                        className="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 text-xs font-bold transition-all"
-                      >
-                        Bảng Điểm
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSitting(sitting.id, sitting.name)}
-                        className="p-1.5 rounded-lg border border-slate-800 bg-slate-900 text-slate-500 hover:text-red-400 hover:border-red-800 transition-all"
-                        title="Xóa ca thi này"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <SittingsTab
+            sittings={sittings}
+            setIsCreateSittingModalOpen={setIsCreateSittingModalOpen}
+            setSittingToEdit={setSittingToEdit}
+            setSelectedSittingForResults={setSelectedSittingForResults}
+            fetchData={fetchData}
+            setConfirmConfig={setConfirmConfig}
+            handleDeleteSitting={handleDeleteSitting}
+          />
         )}
 
         {/* TAB 2: LIVE SESSIONS & RESULTS */}
@@ -1749,149 +1772,31 @@ export const TeacherDashboard: React.FC = () => {
 
         {/* TAB: QUESTION BANK */}
         {activeTab === 'BANK' && (
-          <section className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Layers className="h-5 w-5 text-indigo-400" />
-                <h3 className="text-lg font-bold text-white">NGÂN HÀNG CÂU HỎI</h3>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setCategoryToEdit(null);
-                    setShowCategoryModal(true);
-                  }}
-                  className="flex items-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 px-4 py-2.5 text-xs font-bold text-white transition-all border border-slate-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Thêm Chuyên Đề</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setBankQuestionToEdit(null);
-                    setShowBankQuestionModal(true);
-                  }}
-                  className="flex items-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition-all"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Thêm Câu Hỏi Mới</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row gap-5">
-              {/* Sidebar: Categories */}
-              <div className="w-full md:w-1/4 space-y-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Chuyên Đề / Thư Mục</h4>
-                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-2 space-y-1">
-                  <button className="w-full text-left px-3 py-2.5 rounded-xl bg-indigo-600/20 text-indigo-300 font-semibold text-sm border border-indigo-500/30">
-                    📂 Tất cả câu hỏi ({bankQuestions.length})
-                  </button>
-                  {bankCategories.map((cat) => (
-                    <button key={cat.id} className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors flex items-center justify-between group">
-                      <span>📁 {cat.name}</span>
-                      <span className="text-xs text-slate-500 bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 group-hover:border-slate-700">
-                        {cat.question_count || 0}
-                      </span>
-                    </button>
-                  ))}
-                  {bankCategories.length === 0 && (
-                    <div className="px-3 py-4 text-xs text-slate-500 text-center italic">
-                      Chưa có chuyên đề nào
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Main Content: Questions List */}
-              <div className="w-full md:w-3/4 space-y-4">
-                {/* Search Bar */}
-                <div className="flex items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      placeholder="Tìm kiếm nội dung câu hỏi..."
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 pl-9 pr-4 py-2 text-sm text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-                    />
-                    <Search size={16} className="absolute left-3 top-2.5 text-slate-500" />
-                  </div>
-                </div>
-
-                {bankQuestions.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-12 text-center text-slate-400 space-y-3">
-                    <Layers className="mx-auto h-10 w-10 text-slate-600" />
-                    <p className="font-semibold text-slate-300">Ngân hàng chưa có câu hỏi nào.</p>
-                    <p className="text-xs text-slate-500">Hãy thêm câu hỏi mới hoặc tạo từ đề thi có sẵn.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {bankQuestions.map((q, idx) => (
-                      <div key={q.id} className="rounded-2xl border border-slate-800 bg-slate-900/40 p-4 hover:border-slate-700 transition-colors">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-700">
-                              {q.part_type === 'PART_I' ? 'Phần I' : 'Phần II'}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-bold border border-indigo-500/30">
-                              {q.branch}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                              q.difficulty_level === 'NB' ? 'bg-green-500/20 text-green-300 border-green-500/30' :
-                              q.difficulty_level === 'TH' ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' :
-                              q.difficulty_level === 'VD' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                              'bg-red-500/20 text-red-300 border-red-500/30'
-                            }`}>
-                              {q.difficulty_level}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button 
-                              onClick={() => {
-                                setBankQuestionToEdit(q);
-                                setShowBankQuestionModal(true);
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-                            >
-                              <Edit3 size={14} />
-                            </button>
-                            <button 
-                              onClick={async () => {
-                                if (window.confirm('Xóa câu hỏi này khỏi thư viện?')) {
-                                  try {
-                                    await bankApi.deleteQuestion(q.id as number);
-                                    fetchData();
-                                  } catch(e) { alert('Lỗi'); }
-                                }
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-red-400 rounded-lg hover:bg-red-950 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="text-sm text-slate-200 line-clamp-2">
-                          {q.content}
-                        </div>
-                        {q.options && q.options.length > 0 && (
-                          <div className="mt-3 flex gap-2">
-                            {q.options.map(opt => (
-                              <span key={opt.id} className={`text-xs font-mono px-1.5 py-0.5 rounded ${opt.is_correct ? 'bg-emerald-500/20 text-emerald-400' : 'text-slate-500'}`}>
-                                {opt.label}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="mt-2 text-[10px] text-slate-500">
-                          Thư mục: <span className="text-slate-400">{q.category_name || '(Không phân loại)'}</span> • Người tạo: {q.created_by_name}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+          <BankTab
+            bankQuestions={bankQuestions}
+            bankCategories={bankCategories}
+            bankSearch={bankSearch}
+            setBankSearch={setBankSearch}
+            selectedBankCategoryId={selectedBankCategoryId}
+            setSelectedBankCategoryId={setSelectedBankCategoryId}
+            bankPartFilter={bankPartFilter}
+            setBankPartFilter={setBankPartFilter}
+            bankBranchFilter={bankBranchFilter}
+            setBankBranchFilter={setBankBranchFilter}
+            bankDifficultyFilter={bankDifficultyFilter}
+            setBankDifficultyFilter={setBankDifficultyFilter}
+            bankSortBy={bankSortBy}
+            setBankSortBy={setBankSortBy}
+            bankPage={bankPage}
+            setBankPage={setBankPage}
+            BANK_PER_PAGE={BANK_PER_PAGE}
+            setCategoryToEdit={setCategoryToEdit}
+            setShowCategoryModal={setShowCategoryModal}
+            setBankQuestionToEdit={setBankQuestionToEdit}
+            setShowBankQuestionModal={setShowBankQuestionModal}
+            setConfirmConfig={setConfirmConfig}
+            fetchData={fetchData}
+          />
         )}
 
         {/* TAB: QUESTION FEEDBACKS & DISPUTES */}
@@ -2098,7 +2003,7 @@ export const TeacherDashboard: React.FC = () => {
             </div>
 
             {/* Users Table */}
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
+            <div className="overflow-x-auto overflow-y-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
                   <tr>
@@ -2211,7 +2116,7 @@ export const TeacherDashboard: React.FC = () => {
                 Không có tài khoản Giáo viên nào đang chờ phê duyệt.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
+              <div className="overflow-x-auto overflow-y-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
                     <tr>
@@ -2266,260 +2171,222 @@ export const TeacherDashboard: React.FC = () => {
 
         {/* TAB 5: SUPER ADMIN - SYSTEM STATS & KPI */}
         {isAdmin && activeTab === 'STATS' && (
-          <section className="space-y-6">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-blue-400" />
-              <h3 className="text-lg font-bold text-white">BÁO CÁO & THỐNG KÊ TỔNG QUAN TOÀN TRƯỜNG</h3>
-            </div>
-
-            {systemStats && (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5 text-center">
-                    <div className="text-xs font-bold uppercase text-slate-400 mb-1">Tổng Học Sinh</div>
-                    <div className="text-3xl font-black text-white">{systemStats.total_students}</div>
-                  </div>
-                  <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-5 text-center">
-                    <div className="text-xs font-bold uppercase text-blue-400 mb-1">Giáo Viên Bộ Môn</div>
-                    <div className="text-3xl font-black text-blue-300">{systemStats.total_teachers}</div>
-                  </div>
-                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-center">
-                    <div className="text-xs font-bold uppercase text-emerald-400 mb-1">Đề Thi Đang Mở</div>
-                    <div className="text-3xl font-black text-emerald-300">{systemStats.active_exams} / {systemStats.total_exams}</div>
-                  </div>
-                  <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-5 text-center">
-                    <div className="text-xs font-bold uppercase text-amber-400 mb-1">Lượt Nộp & Điểm TB</div>
-                    <div className="text-2xl font-black text-amber-300">{systemStats.total_completed_sessions} <span className="text-xs font-normal">({systemStats.average_score}đ)</span></div>
-                  </div>
-                </div>
-
-                {/* Class Distribution */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-4 flex items-center gap-2">
-                    <Layers className="h-4 w-4 text-indigo-400" />
-                    Phân Bố Thí Sinh Theo Khối / Lớp
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {systemStats.classes_distribution.map((cls, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-slate-800 bg-slate-900/60 text-xs">
-                        <span className="font-semibold text-slate-200">{cls.class_name}</span>
-                        <span className="font-bold text-blue-400">{cls.count} học sinh</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </section>
+          <SystemStatsTab systemStats={systemStats} />
         )}
       </main>
+      <React.Suspense fallback={null}>
+        {/* Docx Import Modal */}
+        <DocxImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={fetchData}
+          initialFolderId={selectedFolderId || undefined}
+        />
 
-      {/* Docx Import Modal */}
-      <DocxImportModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={fetchData}
-        initialFolderId={selectedFolderId || undefined}
-      />
-
-      {/* Create / Edit Exam Folder Modal */}
-      <CreateFolderModal
-        isOpen={showCreateFolderModal}
-        onClose={() => {
-          setShowCreateFolderModal(false);
-          setFolderToEdit(null);
-          setParentFolderIdForCreate(null);
-        }}
-        onSuccess={() => {
-          fetchData();
-          setShowCreateFolderModal(false);
-          setFolderToEdit(null);
-          setParentFolderIdForCreate(null);
-        }}
-        folderToEdit={folderToEdit}
-        parentFolderId={parentFolderIdForCreate}
-        existingFolders={folders}
-      />
-
-      {/* Move Exam to Folder Modal */}
-      {movingExam && (
-        <MoveExamModal
-          isOpen={!!movingExam}
-          onClose={() => setMovingExam(null)}
+        {/* Create / Edit Exam Folder Modal */}
+        <CreateFolderModal
+          isOpen={showCreateFolderModal}
+          onClose={() => {
+            setShowCreateFolderModal(false);
+            setFolderToEdit(null);
+            setParentFolderIdForCreate(null);
+          }}
           onSuccess={() => {
             fetchData();
-            setMovingExam(null);
+            setShowCreateFolderModal(false);
+            setFolderToEdit(null);
+            setParentFolderIdForCreate(null);
           }}
-          exam={movingExam}
-          folders={folders}
+          folderToEdit={folderToEdit}
+          parentFolderId={parentFolderIdForCreate}
+          existingFolders={folders}
         />
-      )}
 
-      {/* Assign Exam Modal */}
-      {assigningExam && (
-        <AssignExamModal
-          exam={assigningExam}
-          isOpen={!!assigningExam}
-          onClose={() => setAssigningExam(null)}
-          onAssigned={fetchData}
+        {/* Move Exam to Folder Modal */}
+        {movingExam && (
+          <MoveExamModal
+            isOpen={!!movingExam}
+            onClose={() => setMovingExam(null)}
+            onSuccess={() => {
+              fetchData();
+              setMovingExam(null);
+            }}
+            exam={movingExam}
+            folders={folders}
+          />
+        )}
+
+        {/* Assign Exam Modal */}
+        {assigningExam && (
+          <AssignExamModal
+            exam={assigningExam}
+            isOpen={!!assigningExam}
+            onClose={() => setAssigningExam(null)}
+            onAssigned={fetchData}
+          />
+        )}
+
+        {/* Share Exam Modal */}
+        {sharingExam && (
+          <ShareExamModal
+            exam={sharingExam}
+            isOpen={!!sharingExam}
+            onClose={() => setSharingExam(null)}
+            onSuccess={fetchData}
+          />
+        )}
+
+        {/* AI Settings Modal */}
+        <AISettingsModal
+          isOpen={showAISettingsModal}
+          onClose={() => setShowAISettingsModal(false)}
         />
-      )}
 
-      {/* Share Exam Modal */}
-      {sharingExam && (
-        <ShareExamModal
-          exam={sharingExam}
-          isOpen={!!sharingExam}
-          onClose={() => setSharingExam(null)}
+        {/* Two-Factor Authentication Modal */}
+        <TwoFactorModal
+          isOpen={showTwoFactorModal}
+          onClose={() => setShowTwoFactorModal(false)}
           onSuccess={fetchData}
         />
-      )}
 
-      {/* AI Settings Modal */}
-      <AISettingsModal
-        isOpen={showAISettingsModal}
-        onClose={() => setShowAISettingsModal(false)}
-      />
+        {/* Live Proctor Modal */}
+        {liveProctorExamId !== null && (
+          <LiveProctorModal
+            examId={liveProctorExamId}
+            onClose={() => setLiveProctorExamId(null)}
+          />
+        )}
 
-      {/* Two-Factor Authentication Modal */}
-      <TwoFactorModal
-        isOpen={showTwoFactorModal}
-        onClose={() => setShowTwoFactorModal(false)}
-        onSuccess={fetchData}
-      />
+        {/* Exam Analytics Modal */}
+        {analyticsExamId !== null && (
+          <ExamAnalyticsModal
+            examId={analyticsExamId}
+            onClose={() => setAnalyticsExamId(null)}
+          />
+        )}
 
-      {/* Live Proctor Modal */}
-      {liveProctorExamId !== null && (
-        <LiveProctorModal
-          examId={liveProctorExamId}
-          onClose={() => setLiveProctorExamId(null)}
-        />
-      )}
+        {/* Bulk User Import Modal */}
+        {showBulkImportModal && (
+          <BulkUserImportModal
+            onClose={() => setShowBulkImportModal(false)}
+            onSuccess={fetchData}
+          />
+        )}
 
-      {/* Exam Analytics Modal */}
-      {analyticsExamId !== null && (
-        <ExamAnalyticsModal
-          examId={analyticsExamId}
-          onClose={() => setAnalyticsExamId(null)}
-        />
-      )}
+        {/* Reset Password Modal */}
+        {resetPasswordTargetUser && (
+          <ResetPasswordModal
+            targetUser={resetPasswordTargetUser}
+            onClose={() => setResetPasswordTargetUser(null)}
+            onSuccess={fetchData}
+          />
+        )}
 
-      {/* Bulk User Import Modal */}
-      {showBulkImportModal && (
-        <BulkUserImportModal
-          onClose={() => setShowBulkImportModal(false)}
-          onSuccess={fetchData}
-        />
-      )}
+        {/* Edit User Modal */}
+        {editUserTarget && (
+          <EditUserModal
+            targetUser={editUserTarget}
+            onClose={() => setEditUserTarget(null)}
+            onSuccess={fetchData}
+          />
+        )}
 
-      {/* Reset Password Modal */}
-      {resetPasswordTargetUser && (
-        <ResetPasswordModal
-          targetUser={resetPasswordTargetUser}
-          onClose={() => setResetPasswordTargetUser(null)}
-          onSuccess={fetchData}
-        />
-      )}
+        {/* Review Feedback & Auto-Regrade Modal */}
+        {reviewingFeedback && (
+          <ReviewFeedbackModal
+            feedback={reviewingFeedback}
+            onClose={() => setReviewingFeedback(null)}
+            onSuccess={() => {
+              setActionMsg(`Đã duyệt phản ánh câu ${reviewingFeedback.question_order_index}, cập nhật đáp án chuẩn và tự động tính lại điểm cho toàn bộ thí sinh!`);
+              fetchData();
+            }}
+          />
+        )}
 
-      {/* Edit User Modal */}
-      {editUserTarget && (
-        <EditUserModal
-          targetUser={editUserTarget}
-          onClose={() => setEditUserTarget(null)}
-          onSuccess={fetchData}
-        />
-      )}
-
-      {/* Review Feedback & Auto-Regrade Modal */}
-      {reviewingFeedback && (
-        <ReviewFeedbackModal
-          feedback={reviewingFeedback}
-          onClose={() => setReviewingFeedback(null)}
+        {/* Create / Edit Class Modal */}
+        <CreateClassModal
+          isOpen={showCreateClassModal}
+          onClose={() => {
+            setShowCreateClassModal(false);
+            setClassToEdit(null);
+          }}
           onSuccess={() => {
-            setActionMsg(`Đã duyệt phản ánh câu ${reviewingFeedback.question_order_index}, cập nhật đáp án chuẩn và tự động tính lại điểm cho toàn bộ thí sinh!`);
             fetchData();
+            setShowCreateClassModal(false);
+            setClassToEdit(null);
+          }}
+          classToEdit={classToEdit}
+        />
+
+        {/* Class Detail & Student Roster Management Modal */}
+        {managingClass && (
+          <ClassManagementModal
+            classRoom={managingClass}
+            isOpen={!!managingClass}
+            onClose={() => setManagingClass(null)}
+            onClassUpdated={fetchData}
+          />
+        )}
+        
+        {/* Question Bank Modals */}
+        <CreateCategoryModal
+          isOpen={showCategoryModal}
+          categoryToEdit={categoryToEdit}
+          onClose={() => {
+            setShowCategoryModal(false);
+            setCategoryToEdit(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+            setShowCategoryModal(false);
+            setCategoryToEdit(null);
           }}
         />
-      )}
 
-      {/* Create / Edit Class Modal */}
-      <CreateClassModal
-        isOpen={showCreateClassModal}
-        onClose={() => {
-          setShowCreateClassModal(false);
-          setClassToEdit(null);
-        }}
-        onSuccess={() => {
-          fetchData();
-          setShowCreateClassModal(false);
-          setClassToEdit(null);
-        }}
-        classToEdit={classToEdit}
-      />
-
-      {/* Class Detail & Student Roster Management Modal */}
-      {managingClass && (
-        <ClassManagementModal
-          classRoom={managingClass}
-          isOpen={!!managingClass}
-          onClose={() => setManagingClass(null)}
-          onClassUpdated={fetchData}
+        <CreateBankQuestionModal
+          isOpen={showBankQuestionModal}
+          questionToEdit={bankQuestionToEdit}
+          categories={bankCategories}
+          onClose={() => {
+            setShowBankQuestionModal(false);
+            setBankQuestionToEdit(null);
+          }}
+          onSuccess={() => {
+            fetchData();
+            setShowBankQuestionModal(false);
+            setBankQuestionToEdit(null);
+          }}
         />
-      )}
-      
-      {/* Question Bank Modals */}
-      <CreateCategoryModal
-        isOpen={showCategoryModal}
-        categoryToEdit={categoryToEdit}
-        onClose={() => {
-          setShowCategoryModal(false);
-          setCategoryToEdit(null);
-        }}
-        onSuccess={() => {
-          fetchData();
-          setShowCategoryModal(false);
-          setCategoryToEdit(null);
-        }}
-      />
 
-      <CreateBankQuestionModal
-        isOpen={showBankQuestionModal}
-        questionToEdit={bankQuestionToEdit}
-        categories={bankCategories}
-        onClose={() => {
-          setShowBankQuestionModal(false);
-          setBankQuestionToEdit(null);
-        }}
-        onSuccess={() => {
-          fetchData();
-          setShowBankQuestionModal(false);
-          setBankQuestionToEdit(null);
-        }}
-      />
-
-      {/* CA THI MODALS */}
-      <CreateSittingModal
-        isOpen={isCreateSittingModalOpen}
-        onClose={() => {
-          setIsCreateSittingModalOpen(false);
-          setSittingToEdit(null);
-        }}
-        onCreated={() => {
-          fetchData();
-          setSittingToEdit(null);
-        }}
-        availableExams={exams}
-        availableClasses={classRooms.map(c => c.name)}
-        sittingToEdit={sittingToEdit}
-      />
-
-      {selectedSittingForResults && (
-        <SittingResultsModal
-          sitting={selectedSittingForResults}
-          isOpen={true}
-          onClose={() => setSelectedSittingForResults(null)}
+        {/* CA THI MODALS */}
+        <CreateSittingModal
+          isOpen={isCreateSittingModalOpen}
+          onClose={() => {
+            setIsCreateSittingModalOpen(false);
+            setSittingToEdit(null);
+          }}
+          onCreated={() => {
+            fetchData();
+            setSittingToEdit(null);
+          }}
+          availableExams={exams}
+          availableClasses={classRooms.map(c => c.name)}
+          sittingToEdit={sittingToEdit}
         />
-      )}
+
+        {selectedSittingForResults && (
+          <SittingResultsModal
+            sitting={selectedSittingForResults}
+            isOpen={true}
+            onClose={() => setSelectedSittingForResults(null)}
+          />
+        )}
+
+        <ConfirmModal 
+          {...confirmConfig} 
+          onCancel={() => setConfirmConfig(prev => ({...prev, isOpen: false}))} 
+        />
+      </React.Suspense>
     </div>
   );
 };

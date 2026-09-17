@@ -127,7 +127,7 @@ export function CreateSittingModal({ isOpen, onClose, onCreated, availableExams,
       <div className="bg-white text-slate-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
           <h2 className="text-xl font-bold flex items-center gap-2"><Users className="h-6 w-6" /> {sittingToEdit ? 'Chỉnh sửa Ca Thi' : 'Tạo Ca Thi Mới'}</h2>
-          <button onClick={onClose} className="p-2 text-white/80 hover:bg-white/20 rounded-full"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="p-2 text-white/80 hover:bg-white/20 rounded-full" aria-label="Đóng" title="Đóng"><X className="h-5 w-5" /></button>
         </div>
         <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
           <form id="createSittingForm" onSubmit={handleSubmit} className="space-y-6">

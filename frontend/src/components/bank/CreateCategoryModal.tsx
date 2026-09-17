@@ -78,8 +78,12 @@ export const CreateCategoryModal: React.FC<Props> = ({ isOpen, onClose, onSucces
               <label className="block text-xs font-semibold text-slate-300 mb-1">Tên chuyên đề <span className="text-red-400">*</span></label>
               <input
                 type="text"
+                required
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (e.target.value.trim()) setErrorMsg('');
+                }}
                 placeholder="Ví dụ: Hàm và mảng một chiều"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 autoFocus

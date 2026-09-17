@@ -93,21 +93,78 @@ export const BulkUserImportModal: React.FC<Props> = ({ onClose, onSuccess }) => 
           )}
 
           <div className="space-y-3 flex flex-col flex-1">
-            <div className="flex items-center justify-between text-xs">
-              <label className="font-bold text-slate-300">Dữ liệu JSON danh sách tài khoản:</label>
-              <span className="text-[11px] text-slate-500 font-mono">Role: STUDENT | TEACHER</span>
+            <div className="flex items-center justify-between text-xs mb-1">
+              <label className="font-bold text-slate-300">Tải lên file Excel (.xlsx) / CSV hoặc dán JSON:</label>
+              <span className="text-[11px] text-slate-500 font-mono">Cột yêu cầu: username, password, full_name, role, class_name, student_id</span>
+            </div>
+
+            <div 
+              className="border-2 border-dashed border-slate-700 bg-slate-900/50 rounded-xl p-4 text-center cursor-pointer hover:border-blue-500 transition-colors flex flex-col items-center justify-center relative overflow-hidden"
+            >
+              <input 
+                type="file" 
+                accept=".xlsx, .xls, .csv" 
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const XLSX = await import('xlsx');
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                      try {
+                        const bstr = evt.target?.result;
+                        const wb = XLSX.read(bstr, { type: 'binary' });
+                        const wsname = wb.SheetNames[0];
+                        const ws = wb.Sheets[wsname];
+                        const data = XLSX.utils.sheet_to_json(ws);
+                        
+                        // Xử lý chuẩn hóa tên cột tiếng Việt sang tiếng Anh nếu cần
+                        const mappedData = data.map((row: any) => {
+                          const getVal = (keys: string[]) => {
+                            for (const k of keys) {
+                              if (row[k] !== undefined) return row[k];
+                              if (row[k.toLowerCase()] !== undefined) return row[k.toLowerCase()];
+                              if (row[k.toUpperCase()] !== undefined) return row[k.toUpperCase()];
+                            }
+                            return undefined;
+                          };
+                          
+                          return {
+                            username: getVal(['username', 'Tên đăng nhập', 'Tài khoản']),
+                            password: String(getVal(['password', 'Mật khẩu']) || '123456'),
+                            full_name: getVal(['full_name', 'Họ và tên', 'Tên']),
+                            role: getVal(['role', 'Vai trò']) || 'STUDENT',
+                            class_name: getVal(['class_name', 'Lớp']),
+                            student_id: getVal(['student_id', 'SBD', 'Mã HS', 'Mã số'])
+                          };
+                        }).filter(item => item.username);
+
+                        setJsonInput(JSON.stringify(mappedData, null, 2));
+                        setResultMsg(`Đã trích xuất ${mappedData.length} tài khoản từ file Excel.`);
+                        setError('');
+                      } catch(err) {
+                        setError("Lỗi xử lý file Excel. Đảm bảo file không bị hỏng.");
+                      }
+                    };
+                    reader.readAsBinaryString(file);
+                  } catch(err) {
+                    setError("Không thể nạp thư viện XLSX.");
+                  }
+                  e.target.value = ''; // Reset
+                }}
+              />
+              <Upload className="w-8 h-8 text-slate-500 mb-2" />
+              <p className="text-sm font-semibold text-slate-300">Kéo thả file Excel hoặc click để chọn file</p>
+              <p className="text-xs text-slate-500 mt-1">Hỗ trợ định dạng: .xlsx, .csv</p>
             </div>
 
             <textarea
-              rows={10}
+              rows={8}
               value={jsonInput}
               onChange={(e) => setJsonInput(e.target.value)}
               className="w-full flex-1 font-mono text-xs rounded-xl border border-slate-700 bg-slate-950 p-4 text-emerald-400 placeholder-slate-600 focus:border-blue-500 focus:outline-none custom-scrollbar"
             />
-
-            <p className="text-[11px] text-slate-400 italic">
-              * Mẹo: Thầy có thể copy trực tiếp danh sách học sinh từ file Excel chuyển sang định dạng JSON hoặc dùng mẫu trên.
-            </p>
           </div>
         </div>
 

@@ -102,6 +102,12 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
         'OPTIONS': {'min_length': 6},
     },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
 ]
 
 AUTH_USER_MODEL = 'authentication.User'
@@ -178,8 +184,13 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS Settings — Cho phép Frontend trên Vercel hoặc các thiết bị trong mạng gọi API
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS Settings — Cho phép Frontend gọi API
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+]
+# Bổ sung các domain production vào danh sách này khi deploy thực tế
 CORS_ALLOW_CREDENTIALS = True
 
 # === BẢO MẬT: HTTPS Headers (Bật khi deploy production) ===

@@ -32,7 +32,7 @@ interface CodeViewerProps {
   allowRunCode?: boolean;
 }
 
-export const CodeViewer: React.FC<CodeViewerProps> = ({
+export const CodeViewer: React.FC<CodeViewerProps> = React.memo(({
   code,
   language = 'python',
   snippets,
@@ -338,4 +338,4 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
       />
     </div>
   );
-};
+});

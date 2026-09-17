@@ -2,6 +2,12 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { Toaster } from 'sonner';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { CommandPalette } from './components/common/CommandPalette';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 // Lazy load all pages for optimal code splitting & lightning-fast initial load
 const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
@@ -92,110 +98,123 @@ const ProtectedRoute: React.FC<{
 
 export const App: React.FC = () => {
   return (
-    <ThemeProvider>
-      <AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
         <BrowserRouter>
-          <Suspense fallback={<PageLoadingSpinner />}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forbidden" element={<Forbidden />} />
+          <CommandPalette />
+          <ErrorBoundary>
+            <Suspense fallback={<PageLoadingSpinner />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-              {/* Code Playground - Only for logged-in Users (Student, Teacher, Admin) */}
-              <Route
-                path="/playground"
-                element={
-                  <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
-                    <CodePlayground />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Code Playground - Only for logged-in Users (Student, Teacher, Admin) */}
+                <Route
+                  path="/playground"
+                  element={
+                    <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
+                      <CodePlayground />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Account Settings / Change Password / Profile */}
-              <Route
-                path="/change-password"
-                element={
-                  <ProtectedRoute>
-                    <ChangePassword />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <ChangePassword />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Account Settings / Change Password / Profile */}
+                <Route
+                  path="/change-password"
+                  element={
+                    <ProtectedRoute>
+                      <ChangePassword />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <ChangePassword />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Student Dashboard */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
-                    <StudentDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Student Dashboard */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={['STUDENT', 'ADMIN', 'TEACHER']}>
+                      <StudentDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/exam/:examId"
+                  element={
+                    <ProtectedRoute>
+                      <ExamRoom />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/result/:sessionId"
+                  element={
+                    <ProtectedRoute>
+                      <ExamResult />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/playground"
+                  element={
+                    <ProtectedRoute>
+                      <CodePlayground />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Exam Room */}
-              <Route
-                path="/exam/:examId"
-                element={
-                  <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
-                    <ExamRoom />
-                  </ProtectedRoute>
-                }
-              />
+                {/* 403 Forbidden */}
+                <Route path="/forbidden" element={<Forbidden />} />
 
-              {/* Exam Result & Breakdown */}
-              <Route
-                path="/result/:sessionId"
-                element={
-                  <ProtectedRoute allowedRoles={['STUDENT', 'TEACHER', 'ADMIN']}>
-                    <ExamResult />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Teacher / Admin Routes */}
+                <Route
+                  path="/teacher"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                      <TeacherDashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Teacher Dashboard */}
-              <Route
-                path="/teacher"
-                element={
-                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-                    <TeacherDashboard />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Exam Creator */}
+                <Route
+                  path="/teacher/create-exam"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                      <ExamCreator />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/exam-creator"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                      <ExamCreator />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Exam Creator */}
-              <Route
-                path="/teacher/create-exam"
-                element={
-                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-                    <ExamCreator />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/exam-creator"
-                element={
-                  <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
-                    <ExamCreator />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* 404 — Trang không tồn tại */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
+                {/* 404 — Trang không tồn tại */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+        </AuthProvider>
+        <CommandPalette />
+        <Toaster position="top-right" richColors theme="dark" />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 };
 

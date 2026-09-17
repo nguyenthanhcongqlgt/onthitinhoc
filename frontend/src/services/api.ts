@@ -50,13 +50,40 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Interceptor: Handle 401 Unauthorized
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise(function(resolve, reject) {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = 'Bearer ' + token;
+          return apiClient(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
+
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
         try {
@@ -65,15 +92,23 @@ apiClient.interceptors.response.use(
           });
           const newAccessToken = res.data.access;
           localStorage.setItem('access_token', newAccessToken);
+          
+          processQueue(null, newAccessToken);
+          
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
           return apiClient(originalRequest);
         } catch (refreshErr) {
+          processQueue(refreshErr, null);
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           localStorage.removeItem('user');
           window.location.href = '/login';
           return Promise.reject(refreshErr);  // L5: tránh resolve undefined
+        } finally {
+          isRefreshing = false;
         }
+      } else {
+        isRefreshing = false;
       }
     }
     return Promise.reject(error);
@@ -209,6 +244,12 @@ export const examsApi = {
     const res = await apiClient.get(`/exams/${examId}/analytics/`);
     return res.data;
   },
+  exportDocx: async (examId: number) => {
+    const res = await apiClient.get(`/exams/${examId}/export_docx/`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  },
   getExamShareStatus: async (examId: number) => {
     const res = await apiClient.get(`/exams/${examId}/share/`);
     return res.data;
@@ -332,6 +373,10 @@ export const sittingsApi = {
     const res = await apiClient.get(`/sittings/${id}/results/`);
     return res.data;
   },
+  createBroadcast: async (id: number, message: string) => {
+    const res = await apiClient.post(`/sittings/${id}/broadcasts/`, { message });
+    return res.data;
+  },
 };
 
 // ASSESSMENT & EXAM ROOM APIS
@@ -402,6 +447,10 @@ export const assessmentApi = {
   },
   getSessionDetail: async (sessionId: number): Promise<ExamSessionDetail> => {
     const res = await apiClient.get(`/assessment/sessions/${sessionId}/`);
+    return res.data;
+  },
+  getBroadcasts: async (sessionId: number): Promise<{ id: number, message: string, created_at: string }[]> => {
+    const res = await apiClient.get(`/assessment/sessions/${sessionId}/broadcasts/`);
     return res.data;
   },
 };

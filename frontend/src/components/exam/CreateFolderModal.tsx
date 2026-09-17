@@ -154,8 +154,12 @@ export const CreateFolderModal: React.FC<Props> = ({
             </label>
             <input
               type="text"
+              required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (e.target.value.trim()) setErrorMsg('');
+              }}
               placeholder="Ví dụ: Bài kiểm tra Khối 10, Chủ đề 1: Python,..."
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs sm:text-sm"
               autoFocus

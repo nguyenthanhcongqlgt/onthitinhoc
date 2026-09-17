@@ -6,7 +6,7 @@ from django.utils import timezone
 from authentication.models import User
 from exams.models import Exam, Question
 from exams.services import ExamSecurityService
-from .models import ExamSession, StudentAnswer, ViolationLog
+from .models import ExamSession, StudentAnswer, ViolationLog, ExamBroadcast
 from .matrix_engine import ScoringMatrixEngine
 from .serializers import (
     ExamSessionSerializer,
@@ -591,4 +591,25 @@ class StudentAnalyticsView(APIView):
             "weaknesses": weaknesses
         })
 
+class ExamBroadcastView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, session_id):
+        session = get_object_or_404(ExamSession, id=session_id)
+        if request.user.role == User.Role.STUDENT and request.user != session.student:
+            return Response({"detail": "Không có quyền truy cập."}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Tìm sitting của session này
+        from exams.models import SittingAssignment
+        assignment = SittingAssignment.objects.filter(student=session.student, exam=session.exam).first()
+        if not assignment:
+            return Response([]) # No sitting
+
+        broadcasts = ExamBroadcast.objects.filter(sitting=assignment.sitting).order_by('-created_at')
+        data = [{"id": b.id, "message": b.message, "created_at": b.created_at} for b in broadcasts]
+        return Response(data)
+
+    def post(self, request, session_id):
+        # Allow posting by session for convenience (maybe proctoring a single session? No, broadcasts are per sitting)
+        return Response({"detail": "Please post to sitting broadcasts endpoint"}, status=status.HTTP_400_BAD_REQUEST)
 

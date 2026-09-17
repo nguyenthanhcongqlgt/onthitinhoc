@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { authApi } from '../../services/api';
+import { SCHOOL_NAME } from '../../config/constants';
 import { User } from '../../types';
 import { UserCheck, X, CheckCircle2, AlertCircle, Save } from 'lucide-react';
 
@@ -15,7 +16,7 @@ export const EditUserModal: React.FC<Props> = ({ targetUser, onClose, onSuccess 
   const [studentId, setStudentId] = useState<string>(targetUser.student_id || '');
   const [email, setEmail] = useState<string>(targetUser.email || '');
   const [phoneNumber, setPhoneNumber] = useState<string>(targetUser.phone_number || '');
-  const [school, setSchool] = useState<string>(targetUser.school || 'THPT Quất Lâm');
+  const [school, setSchool] = useState<string>(targetUser.school || SCHOOL_NAME);
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');

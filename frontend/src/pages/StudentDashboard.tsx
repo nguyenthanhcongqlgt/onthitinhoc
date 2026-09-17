@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { examsApi, assessmentApi } from '../services/api';
 import { ExamInfo, ExamSessionDetail, StudentAnalyticsData } from '../types';
 import { ThemeToggle } from '../components/common/ThemeToggle';
+import { PaginationBar } from '../components/common/PaginationBar';
+import { Skeleton } from '../components/common/Skeleton';
 import {
   Home,
   GraduationCap,
@@ -39,12 +42,30 @@ export const StudentDashboard: React.FC = () => {
   const codeParam = searchParams.get('code') || '';
   const autoParam = searchParams.get('auto') === 'true';
 
-  const [exams, setExams] = useState<ExamInfo[]>([]);
-  const [sessions, setSessions] = useState<ExamSessionDetail[]>([]);
-  const [analytics, setAnalytics] = useState<StudentAnalyticsData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { data, isLoading } = useQuery({
+    queryKey: ['student-dashboard-data'],
+    queryFn: async () => {
+      const [examsData, sessionsData, analyticsData] = await Promise.all([
+        examsApi.getExams(),
+        assessmentApi.getSessions(),
+        assessmentApi.getStudentAnalytics(),
+      ]);
+      return { exams: examsData, sessions: sessionsData, analytics: analyticsData };
+    },
+  });
+
+  const exams = data?.exams || [];
+  const sessions = data?.sessions || [];
+  const analytics = data?.analytics || null;
+
   const [examSearch, setExamSearch] = useState<string>(codeParam);
   const [selectedFolderFilter, setSelectedFolderFilter] = useState<string>('ALL');
+
+  const [historySearch, setHistorySearch] = useState<string>('');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<'ALL' | 'SUBMITTED' | 'LOCKED_VIOLATION' | 'IN_PROGRESS'>('ALL');
+  const [historyBranchFilter, setHistoryBranchFilter] = useState<'ALL' | 'CS' | 'ICT'>('ALL');
+  const [historySortBy, setHistorySortBy] = useState<string>('newest');
+  const [historyPage, setHistoryPage] = useState<number>(1);
 
   const availableFolderNames = React.useMemo(() => {
     const names = new Set<string>();
@@ -61,36 +82,20 @@ export const StudentDashboard: React.FC = () => {
   const [isVerifyingCode, setIsVerifyingCode] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [examsData, sessionsData, analyticsData] = await Promise.all([
-          examsApi.getExams(),
-          assessmentApi.getSessions(),
-          assessmentApi.getStudentAnalytics(),
-        ]);
-        setExams(examsData);
-        setSessions(sessionsData);
-        setAnalytics(analyticsData);
-
-        // Auto-join / auto-open if codeParam was supplied from quick join
-        if (codeParam) {
-          const trimmed = codeParam.trim().toLowerCase();
-          const matched = examsData.find(
-            (ex) =>
-              ex.id.toString() === trimmed ||
-              (ex.title && ex.title.toLowerCase().includes(trimmed))
-          );
-          if (matched && autoParam) {
-            handleStartExam(matched);
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+    // Auto-join / auto-open if codeParam was supplied from quick join
+    if (codeParam && exams.length > 0) {
+      const trimmed = codeParam.trim().toLowerCase();
+      const matched = exams.find(
+        (ex) =>
+          ex.id.toString() === trimmed ||
+          (ex.title && ex.title.toLowerCase().includes(trimmed))
+      );
+      if (matched && autoParam) {
+        handleStartExam(matched);
       }
-    };
-    fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codeParam, autoParam, exams.length]);
   }, [codeParam, autoParam]);
 
   const handleStartExam = (exam: ExamInfo) => {
@@ -122,6 +127,35 @@ export const StudentDashboard: React.FC = () => {
       setIsVerifyingCode(false);
     }
   };
+
+  const SESSIONS_PER_PAGE = 10;
+
+  let filteredSessions = sessions.filter(s => {
+    if (historySearch.trim()) {
+      const q = historySearch.toLowerCase();
+      if (!s.exam_title.toLowerCase().includes(q)) return false;
+    }
+    if (historyStatusFilter !== 'ALL' && s.status !== historyStatusFilter) return false;
+    if (historyBranchFilter !== 'ALL' && s.selected_branch !== historyBranchFilter) return false;
+    return true;
+  });
+
+  filteredSessions = [...filteredSessions].sort((a, b) => {
+    switch (historySortBy) {
+      case 'oldest': return (a.id) - (b.id);
+      case 'score_high': return (parseFloat(String(b.total_score)) || 0) - (parseFloat(String(a.total_score)) || 0);
+      case 'score_low': return (parseFloat(String(a.total_score)) || 0) - (parseFloat(String(b.total_score)) || 0);
+      case 'newest':
+      default: return (b.id) - (a.id);
+    }
+  });
+
+  const totalHistoryPages = Math.ceil(filteredSessions.length / SESSIONS_PER_PAGE);
+  const paginatedSessions = filteredSessions.slice((historyPage - 1) * SESSIONS_PER_PAGE, historyPage * SESSIONS_PER_PAGE);
+
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historySearch, historyStatusFilter, historyBranchFilter, historySortBy]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 pb-16">
@@ -296,7 +330,22 @@ export const StudentDashboard: React.FC = () => {
           )}
 
           {isLoading ? (
-            <div className="py-12 text-center text-slate-500 text-sm">Đang tải danh sách đề thi...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex flex-col justify-between rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-lg h-[240px]">
+                  <div>
+                    <div className="flex justify-between mb-3">
+                      <Skeleton className="h-5 w-24" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-full mb-1" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                  <Skeleton className="h-10 w-full mt-4" />
+                </div>
+              ))}
+            </div>
           ) : exams.length === 0 ? (
             <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-12 text-center text-slate-400 space-y-2">
               <FileText className="mx-auto h-8 w-8 text-slate-600" />
@@ -539,77 +588,154 @@ export const StudentDashboard: React.FC = () => {
 
         {/* Test History Section */}
         <section className="space-y-4 pt-4">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-indigo-400" />
-            <h3 className="text-lg font-bold text-white">LỊCH SỬ THI TRỰC TUYẾN</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-indigo-400" />
+              <h3 className="text-lg font-bold text-white">LỊCH SỬ THI TRỰC TUYẾN</h3>
+              <span className="text-xs text-indigo-400 font-semibold bg-indigo-950/60 border border-indigo-800/60 px-2.5 py-1 rounded-lg">
+                Hiển thị {paginatedSessions.length} / {sessions.length} lượt thi
+              </span>
+            </div>
           </div>
+
+          {sessions.length > 0 && (
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-3 flex flex-wrap items-center gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={historySearch}
+                  onChange={(e) => setHistorySearch(e.target.value)}
+                  placeholder="Tìm kiếm tên đề thi..."
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none pl-9 pr-4 py-2"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-400 font-semibold pl-1">Trạng thái:</span>
+                {(['ALL', 'SUBMITTED', 'LOCKED_VIOLATION', 'IN_PROGRESS'] as const).map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setHistoryStatusFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      historyStatusFilter === status 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {status === 'ALL' ? 'Tất cả' : status === 'SUBMITTED' ? 'Hoàn thành' : status === 'LOCKED_VIOLATION' ? 'Bị khóa' : 'Đang làm'}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-slate-400 font-semibold pl-1 border-l border-slate-700 ml-1">Nhánh:</span>
+                {(['ALL', 'CS', 'ICT'] as const).map(branch => (
+                  <button
+                    key={branch}
+                    onClick={() => setHistoryBranchFilter(branch)}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                      historyBranchFilter === branch 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {branch === 'ALL' ? 'Tất cả' : branch}
+                  </button>
+                ))}
+              </div>
+              <select
+                value={historySortBy}
+                onChange={(e) => setHistorySortBy(e.target.value)}
+                className="rounded-xl border border-slate-700 bg-slate-950 text-xs text-slate-300 px-3 py-2 focus:outline-none focus:border-blue-500 ml-auto"
+              >
+                <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
+                <option value="score_high">Điểm cao→thấp</option>
+                <option value="score_low">Điểm thấp→cao</option>
+              </select>
+            </div>
+          )}
 
           {sessions.length === 0 ? (
             <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center text-xs text-slate-500">
               Bạn chưa tham gia bài thi nào. Hãy chọn một đề thi phía trên để thử sức!
             </div>
-          ) : (
-            <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
-                    <tr>
-                      <th className="px-5 py-3.5">Đề thi</th>
-                      <th className="px-4 py-3.5">Nhánh Phần II</th>
-                      <th className="px-4 py-3.5">Điểm Phần I</th>
-                      <th className="px-4 py-3.5">Điểm Phần II</th>
-                      <th className="px-4 py-3.5">Tổng điểm</th>
-                      <th className="px-4 py-3.5">Trạng thái</th>
-                      <th className="px-5 py-3.5 text-right">Chi tiết</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {sessions.map((session) => (
-                      <tr key={session.id} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="px-5 py-4 font-semibold text-white max-w-xs truncate">
-                          {session.exam_title}
-                        </td>
-                        <td className="px-4 py-4">
-                          <span className="inline-flex rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-bold text-indigo-400 border border-indigo-500/20">
-                            {session.selected_branch === 'CS' ? 'CS (Khoa học MT)' : session.selected_branch === 'ICT' ? 'ICT (Tin học UD)' : 'Chưa chọn'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 font-mono font-medium text-slate-300">
-                          {session.part1_score}đ ({session.part1_correct_count} câu)
-                        </td>
-                        <td className="px-4 py-4 font-mono font-medium text-slate-300">
-                          {session.part2_score}đ
-                        </td>
-                        <td className="px-4 py-4 font-mono text-sm font-bold text-blue-400">
-                          {session.total_score}đ
-                        </td>
-                        <td className="px-4 py-4">
-                          {session.status === 'SUBMITTED' ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Hoàn thành
-                            </span>
-                          ) : session.status === 'LOCKED_VIOLATION' ? (
-                            <span className="inline-flex items-center gap-1 text-red-400 font-semibold">
-                              <AlertTriangle className="h-3.5 w-3.5" /> Bị khóa ({session.violation_count} vi phạm)
-                            </span>
-                          ) : (
-                            <span className="text-amber-400 font-semibold">Đang làm dở</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          <button
-                            onClick={() => navigate(`/result/${session.id}`)}
-                            className="rounded-lg bg-blue-600/20 px-3.5 py-2 font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all text-xs"
-                          >
-                            Xem Phân Tích
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          ) : filteredSessions.length === 0 ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center text-xs text-slate-500">
+              Không tìm thấy lượt thi phù hợp với bộ lọc.
             </div>
+          ) : (
+            <>
+              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
+                      <tr>
+                        <th className="px-5 py-3.5">Đề thi</th>
+                        <th className="px-4 py-3.5">Nhánh Phần II</th>
+                        <th className="px-4 py-3.5">Điểm Phần I</th>
+                        <th className="px-4 py-3.5">Điểm Phần II</th>
+                        <th className="px-4 py-3.5">Tổng điểm</th>
+                        <th className="px-4 py-3.5">Trạng thái</th>
+                        <th className="px-5 py-3.5 text-right">Chi tiết</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {paginatedSessions.map((session) => (
+                        <tr key={session.id} className="hover:bg-slate-900/50 transition-colors">
+                          <td className="px-5 py-4 font-semibold text-white max-w-xs truncate">
+                            {session.exam_title}
+                          </td>
+                          <td className="px-4 py-4">
+                            <span className="inline-flex rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] font-bold text-indigo-400 border border-indigo-500/20">
+                              {session.selected_branch === 'CS' ? 'CS (Khoa học MT)' : session.selected_branch === 'ICT' ? 'ICT (Tin học UD)' : 'Chưa chọn'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 font-mono font-medium text-slate-300">
+                            {session.part1_score}đ ({session.part1_correct_count} câu)
+                          </td>
+                          <td className="px-4 py-4 font-mono font-medium text-slate-300">
+                            {session.part2_score}đ
+                          </td>
+                          <td className="px-4 py-4 font-mono text-sm font-bold text-blue-400">
+                            {session.total_score}đ
+                          </td>
+                          <td className="px-4 py-4">
+                            {session.status === 'SUBMITTED' ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold">
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Hoàn thành
+                              </span>
+                            ) : session.status === 'LOCKED_VIOLATION' ? (
+                              <span className="inline-flex items-center gap-1 text-red-400 font-semibold">
+                                <AlertTriangle className="h-3.5 w-3.5" /> Bị khóa ({session.violation_count} vi phạm)
+                              </span>
+                            ) : (
+                              <span className="text-amber-400 font-semibold">Đang làm dở</span>
+                            )}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              onClick={() => navigate(`/result/${session.id}`)}
+                              className="rounded-lg bg-blue-600/20 px-3.5 py-2 font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all text-xs"
+                            >
+                              Xem Phân Tích
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <PaginationBar
+                currentPage={historyPage}
+                totalPages={totalHistoryPages}
+                totalItems={filteredSessions.length}
+                itemsPerPage={SESSIONS_PER_PAGE}
+                onPageChange={setHistoryPage}
+                label="lượt thi"
+              />
+            </>
           )}
         </section>
       </main>

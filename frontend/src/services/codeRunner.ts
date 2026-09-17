@@ -4,6 +4,8 @@
  * Python, and C++ (via Judge0 Public CE API).
  */
 
+import { SCHOOL_NAME } from '../config/constants';
+
 export type PlaygroundLanguage = 'html-css' | 'sql' | 'python' | 'cpp';
 
 export interface ExecutionResult {
@@ -119,7 +121,7 @@ export const CODE_SAMPLES: Record<
       code: `<div class="card">
   <div class="avatar">👨‍🎓</div>
   <h2>Nguyễn Đức Anh</h2>
-  <p class="role">Học sinh Lớp 12A1 • THPT Quất Lâm</p>
+  <p class="role">Học sinh Lớp 12A1 • ${SCHOOL_NAME}</p>
   <div class="stats">
     <div class="stat-item">
       <span class="label">Điểm Tin:</span>
