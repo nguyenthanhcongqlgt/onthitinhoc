@@ -211,7 +211,6 @@ export const App: React.FC = () => {
           </ErrorBoundary>
         </BrowserRouter>
         </AuthProvider>
-        <CommandPalette />
         <Toaster position="top-right" richColors theme="dark" />
       </ThemeProvider>
     </QueryClientProvider>
