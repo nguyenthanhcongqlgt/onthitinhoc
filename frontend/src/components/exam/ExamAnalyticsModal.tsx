@@ -174,16 +174,16 @@ export const ExamAnalyticsModal: React.FC<Props> = ({ examId, onClose }) => {
           <div className="flex-1 overflow-y-auto space-y-6 pt-4 pr-1">
             {/* KPI Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <button
-                type="button"
+              <div
+                role="button"
                 onClick={handleFetchSessions}
-                className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-center hover:border-blue-500/50 hover:bg-slate-900 transition-all group"
+                className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-center hover:border-blue-500/50 hover:bg-slate-900 transition-all group cursor-pointer"
               >
                 <div className="text-xs font-bold uppercase text-slate-400 mb-1 group-hover:text-blue-400 flex items-center justify-center gap-1">
                   Số Lượt Nộp <List className="h-3 w-3" />
                 </div>
                 <div className="text-2xl font-black text-white">{data.total_submissions}</div>
-              </button>
+              </div>
               <div className="rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 text-center">
                 <div className="text-xs font-bold uppercase text-blue-400 mb-1">Điểm Trung Bình</div>
                 <div className="text-2xl font-black text-blue-300">{data.average_score} <span className="text-xs font-normal">/ {data.max_scale}đ</span></div>
