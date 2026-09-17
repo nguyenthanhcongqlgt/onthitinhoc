@@ -96,7 +96,6 @@ export const StudentDashboard: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeParam, autoParam, exams.length]);
-  }, [codeParam, autoParam]);
 
   const handleStartExam = (exam: ExamInfo) => {
     // If protected, prompt access code
