@@ -334,7 +334,7 @@ export const TeacherDashboard: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/"
-              className="flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all whitespace-nowrap"
               title="Về Trang Chủ hệ thống"
             >
               <Home className="h-4 w-4" />
@@ -343,60 +343,63 @@ export const TeacherDashboard: React.FC = () => {
 
             <Link
               to="/playground"
-              className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/60 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/60 hover:text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all whitespace-nowrap"
               title="Góc Thực Hành Lập Trình & CSDL (Python, C++, SQL, HTML/CSS)"
             >
-              <Code2 className="h-4 w-4 text-emerald-400" />
+              <Code2 className="h-4 w-4" />
               <span className="hidden sm:inline">Góc Thực Hành ⚡</span>
             </Link>
 
-            <ThemeToggle />
+            {/* Utility Icons */}
+            <div className="flex items-center gap-1 sm:gap-1.5 ml-2">
+              <ThemeToggle variant="switch-only" className="mr-1" />
 
-            <button
-              onClick={() => setShowAISettingsModal(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-indigo-500/40 bg-indigo-950/60 px-3 py-2 text-xs font-semibold text-indigo-300 hover:bg-indigo-900/60 hover:text-white transition-all shadow-sm"
-              title="Cài đặt API Key và mô hình AI (Gemini, ChatGPT, DeepSeek, Claude, Grok)"
-            >
-              <Bot className="h-4 w-4 text-indigo-400" />
-              <span className="hidden sm:inline">Cài đặt AI</span>
-            </button>
+              <button
+                onClick={() => setShowAISettingsModal(true)}
+                className="p-2 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                title="Cài đặt API Key và AI"
+              >
+                <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
 
-            <Link
-              to="/change-password"
-              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-              title="Cài đặt thông tin tài khoản (Họ tên, Mật khẩu)"
-            >
-              <UserCheck className="h-3.5 w-3.5 text-blue-400" />
-              <span className="hidden sm:inline">Tài khoản</span>
-            </Link>
+              <Link
+                to="/change-password"
+                className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                title="Cài đặt tài khoản"
+              >
+                <UserCheck className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Link>
 
-            <button
-              onClick={() => setShowTwoFactorModal(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors relative"
-              title="Bảo mật 2 lớp qua Google Authenticator"
-            >
-              {user?.is_two_factor_enabled ? (
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              ) : (
-                <Shield className="h-3.5 w-3.5 text-slate-400" />
-              )}
-              <span className="hidden sm:inline">Bảo mật 2FA</span>
-              {user?.is_two_factor_enabled && (
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-              )}
-            </button>
-
-            <div className="hidden sm:block text-right">
-              <div className="text-xs font-bold text-slate-200">{user?.full_name || user?.username}</div>
-              <div className="text-[11px] text-blue-400 font-semibold">{user?.role}</div>
+              <button
+                onClick={() => setShowTwoFactorModal(true)}
+                className="p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors relative"
+                title="Bảo mật 2FA"
+              >
+                {user?.is_two_factor_enabled ? (
+                  <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400" />
+                ) : (
+                  <Shield className="h-4 w-4 sm:h-5 sm:w-5" />
+                )}
+                {user?.is_two_factor_enabled && (
+                  <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400 border border-slate-900"></span>
+                )}
+              </button>
             </div>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Đăng xuất</span>
-            </button>
+
+            {/* User Profile & Logout */}
+            <div className="flex items-center gap-2 border-l border-slate-700/50 pl-2 sm:pl-4 ml-1">
+              <div className="hidden lg:block text-right">
+                <div className="text-[13px] font-bold text-slate-200">{user?.full_name || user?.username}</div>
+                <div className="text-[10px] text-slate-400 uppercase font-semibold">{user?.role}</div>
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Đăng xuất"
+              >
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </header>

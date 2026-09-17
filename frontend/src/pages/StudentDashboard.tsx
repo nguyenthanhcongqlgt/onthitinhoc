@@ -154,7 +154,7 @@ export const StudentDashboard: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
               to="/"
-              className="flex items-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-950/60 px-3 py-2 text-xs font-bold text-blue-300 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-all whitespace-nowrap"
               title="Về Trang Chủ hệ thống"
             >
               <Home className="h-4 w-4" />
@@ -163,35 +163,40 @@ export const StudentDashboard: React.FC = () => {
 
             <Link
               to="/playground"
-              className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/60 px-3 py-2 text-xs font-semibold text-emerald-300 hover:bg-emerald-900/60 hover:text-white transition-all shadow-sm"
-              title="Góc Thực Hành Lập Trình & Cơ Sở Dữ Liệu (Python, C++, SQL, HTML/CSS)"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-bold text-slate-400 hover:text-emerald-500 hover:bg-emerald-500/10 rounded-xl transition-all whitespace-nowrap"
+              title="Góc Thực Hành Lập Trình & CSDL (Python, C++, SQL, HTML/CSS)"
             >
-              <Code2 className="h-4 w-4 text-emerald-400" />
+              <Code2 className="h-4 w-4" />
               <span className="hidden sm:inline">Góc Thực Hành ⚡</span>
             </Link>
 
-            <ThemeToggle />
+            {/* Utility Icons */}
+            <div className="flex items-center gap-1 sm:gap-1.5 ml-2">
+              <ThemeToggle variant="switch-only" className="mr-1" />
 
-            <Link
-              to="/change-password"
-              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
-              title="Cài đặt thông tin tài khoản (Họ tên, Mật khẩu)"
-            >
-              <User className="h-3.5 w-3.5 text-blue-400" />
-              <span className="hidden sm:inline">Tài khoản</span>
-            </Link>
-
-            <div className="hidden sm:block text-right">
-              <div className="text-xs font-bold text-slate-200">{user?.full_name || user?.username}</div>
-              <div className="text-[11px] text-slate-400">{user?.class_name || 'Học sinh'} • SBD: {user?.student_id || 'Chưa cấp'}</div>
+              <Link
+                to="/change-password"
+                className="p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                title="Cài đặt tài khoản"
+              >
+                <User className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Link>
             </div>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-colors"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span>Đăng xuất</span>
-            </button>
+
+            {/* User Profile & Logout */}
+            <div className="flex items-center gap-2 border-l border-slate-700/50 pl-2 sm:pl-4 ml-1">
+              <div className="hidden lg:block text-right">
+                <div className="text-[13px] font-bold text-slate-200">{user?.full_name || user?.username}</div>
+                <div className="text-[10px] text-slate-400 uppercase font-semibold">{user?.class_name || 'Học sinh'} • SBD: {user?.student_id || 'Chưa cấp'}</div>
+              </div>
+              <button
+                onClick={logout}
+                className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                title="Đăng xuất"
+              >
+                <LogOut className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
