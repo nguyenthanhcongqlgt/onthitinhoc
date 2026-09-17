@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Command } from 'cmdk';
 import { Search, Home, FileText, Settings, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import './CommandPalette.css'; // We will just use standard tailwind classes, no need for css. But cmdk requires some base styles.
 
 export const CommandPalette: React.FC = () => {
   const [open, setOpen] = useState(false);
