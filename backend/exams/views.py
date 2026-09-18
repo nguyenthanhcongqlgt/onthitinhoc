@@ -1282,6 +1282,8 @@ class ExamAnalyticsView(APIView):
         exam = get_object_or_404(Exam, id=exam_id)
         if not (request.user.role in [User.Role.ADMIN, User.Role.TEACHER] or request.user.is_superuser):
             return Response({"detail": "Chỉ có Giáo viên hoặc Super Admin mới có quyền xem phân tích đề thi."}, status=status.HTTP_403_FORBIDDEN)
+        if not (request.user.is_superuser or request.user.role == User.Role.ADMIN or exam.creator == request.user or exam.shared_teachers.filter(id=request.user.id).exists() or exam.is_shared_with_all_teachers):
+            return Response({"detail": "Bạn không có quyền truy cập đề thi của giáo viên khác."}, status=status.HTTP_403_FORBIDDEN)
 
         all_sessions = ExamSession.objects.filter(
             exam=exam,
@@ -1637,6 +1639,8 @@ class RemindStudentsView(APIView):
         exam = get_object_or_404(Exam, id=exam_id)
         if not (request.user.role in [User.Role.ADMIN, User.Role.TEACHER] or request.user.is_superuser):
             return Response({"detail": "Không có quyền."}, status=status.HTTP_403_FORBIDDEN)
+        if not (request.user.is_superuser or request.user.role == User.Role.ADMIN or exam.creator == request.user or exam.shared_teachers.filter(id=request.user.id).exists() or exam.is_shared_with_all_teachers):
+            return Response({"detail": "Bạn không có quyền truy cập đề thi của giáo viên khác."}, status=status.HTTP_403_FORBIDDEN)
 
         # Find students who already submitted
         submitted_ids = set(ExamSession.objects.filter(
@@ -1691,6 +1695,8 @@ class ExportExamExcelView(APIView):
         exam = get_object_or_404(Exam, id=exam_id)
         if not (request.user.role in [User.Role.ADMIN, User.Role.TEACHER] or request.user.is_superuser):
             return Response({"detail": "Không có quyền."}, status=status.HTTP_403_FORBIDDEN)
+        if not (request.user.is_superuser or request.user.role == User.Role.ADMIN or exam.creator == request.user or exam.shared_teachers.filter(id=request.user.id).exists() or exam.is_shared_with_all_teachers):
+            return Response({"detail": "Bạn không có quyền truy cập đề thi của giáo viên khác."}, status=status.HTTP_403_FORBIDDEN)
 
         sessions = ExamSession.objects.filter(
             exam=exam,
