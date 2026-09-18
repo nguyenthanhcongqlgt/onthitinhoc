@@ -204,6 +204,21 @@ class SubmitExamView(APIView):
         if session.status in [ExamSession.Status.SUBMITTED, ExamSession.Status.LOCKED_VIOLATION]:
             return Response({"detail": "Bài thi đã được nộp trước đó."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Anti-Cheat: Time Manipulation Check
+        from datetime import timedelta
+        duration = getattr(session.exam, 'duration_minutes', 50) or 50
+        max_duration = timedelta(minutes=duration + session.extra_time_minutes)
+        grace_period = timedelta(minutes=3) # Allow 3 minutes for network latency
+        
+        now = timezone.now()
+        if now > session.start_time + max_duration + grace_period:
+            session.status = ExamSession.Status.LOCKED_VIOLATION
+            session.is_locked = True
+            session.lock_reason = "Quá thời gian làm bài quy định (Phát hiện gian lận thời gian)."
+            session.submit_time = now
+            session.save()
+            return Response({"detail": "Đã quá thời gian làm bài cho phép. Bài thi đã bị hệ thống khóa."}, status=status.HTTP_403_FORBIDDEN)
+
         part1_submissions = request.data.get('part1_answers', [])
         part2_submissions = request.data.get('part2_answers', [])
         if session.exam.branch_mode == Exam.BranchMode.BOTH or session.selected_branch == ExamSession.BranchSelected.BOTH:
@@ -471,6 +486,20 @@ class AutoSaveDraftView(APIView):
         session = get_object_or_404(ExamSession, id=session_id, student=request.user)
         if session.status != ExamSession.Status.IN_PROGRESS:
             return Response({"detail": "Phiên thi không ở trạng thái làm bài."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Anti-Cheat: Time Manipulation Check
+        from datetime import timedelta
+        duration = getattr(session.exam, 'duration_minutes', 50) or 50
+        max_duration = timedelta(minutes=duration + session.extra_time_minutes)
+        grace_period = timedelta(minutes=3)
+        now = timezone.now()
+        if now > session.start_time + max_duration + grace_period:
+            session.status = ExamSession.Status.LOCKED_VIOLATION
+            session.is_locked = True
+            session.lock_reason = "Quá thời gian làm bài quy định (Phát hiện gian lận qua AutoSave)."
+            session.submit_time = now
+            session.save()
+            return Response({"detail": "Đã quá hạn thời gian làm bài, hệ thống đã khóa bài thi."}, status=status.HTTP_403_FORBIDDEN)
 
         draft = request.data.get('draft', {})
         session.draft_answers = draft
