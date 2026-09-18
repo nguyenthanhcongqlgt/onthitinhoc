@@ -32,9 +32,9 @@ export const QuestionCardPart1: React.FC<QuestionCardPart1Props> = React.memo(({
   showAnswerKey = false,
 }) => {
   const contentFontClass =
-    fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg leading-relaxed' : 'text-base';
+    fontSize === 'sm' ? 'text-base' : fontSize === 'lg' ? 'text-xl leading-relaxed' : 'text-lg leading-relaxed';
   const optionFontClass =
-    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm';
+    fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base';
 
   return (
     <div

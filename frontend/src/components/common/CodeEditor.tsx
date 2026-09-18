@@ -400,7 +400,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             }}
           >
             {lines.map((_, i) => (
-              <div key={i} style={{ height: '24px', lineHeight: '24px' }}>
+              <div key={i} style={{ height: '26px', lineHeight: '26px' }}>
                 {i + 1}
               </div>
             ))}
@@ -419,8 +419,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
               margin: 0,
               border: 0,
               background: 'transparent',
-              lineHeight: '24px',
-              fontSize: '13px',
+              lineHeight: '26px',
+              fontSize: '15px',
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
               tabSize: 4,
               whiteSpace: 'pre',
@@ -462,8 +462,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
               border: 0,
               background: 'transparent',
               backgroundColor: 'transparent',
-              lineHeight: '24px',
-              fontSize: '13px',
+              lineHeight: '26px',
+              fontSize: '15px',
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
               tabSize: 4,
               whiteSpace: 'pre',

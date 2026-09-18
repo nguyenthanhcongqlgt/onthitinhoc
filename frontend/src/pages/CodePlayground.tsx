@@ -215,7 +215,7 @@ export const CodePlayground: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       {/* Top Navbar */}
       <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-30 px-4 sm:px-6 py-3">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
               to="/"
@@ -328,7 +328,7 @@ export const CodePlayground: React.FC = () => {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col p-3 sm:p-5 max-w-7xl w-full mx-auto min-h-0">
+      <main className="flex-1 flex flex-col p-3 sm:p-5 max-w-[1600px] w-full mx-auto min-h-0">
         <div className="flex-1 rounded-3xl border border-slate-800 bg-slate-950 shadow-2xl flex flex-col overflow-hidden">
           {/* Sub Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 bg-slate-900/60 px-4 py-2.5 text-xs">
@@ -627,7 +627,7 @@ export const CodePlayground: React.FC = () => {
                           <AlertCircle className="h-4 w-4" />
                           Thông báo lỗi hệ thống:
                         </div>
-                        <div className="text-xs leading-relaxed font-sans">{result.error}</div>
+                        <div className="text-sm leading-relaxed font-sans">{result.error}</div>
                       </div>
                     )}
 
@@ -637,7 +637,7 @@ export const CodePlayground: React.FC = () => {
                           <AlertCircle className="h-4 w-4" />
                           Lỗi biên dịch (Compilation Error):
                         </div>
-                        <pre className="whitespace-pre-wrap overflow-x-auto text-[11px] leading-relaxed">
+                        <pre className="whitespace-pre-wrap overflow-x-auto text-sm leading-relaxed">
                           {result.compileOutput}
                         </pre>
                       </div>
@@ -646,7 +646,7 @@ export const CodePlayground: React.FC = () => {
                     {result?.stderr && (
                       <div className="p-3.5 rounded-2xl bg-amber-950/40 border border-amber-800 text-amber-300 space-y-1">
                         <div className="font-bold text-amber-400">Lỗi thực thi (Runtime Error / Stderr):</div>
-                        <pre className="whitespace-pre-wrap overflow-x-auto text-[11px] leading-relaxed">
+                        <pre className="whitespace-pre-wrap overflow-x-auto text-sm leading-relaxed">
                           {result.stderr}
                         </pre>
                       </div>
@@ -654,13 +654,13 @@ export const CodePlayground: React.FC = () => {
 
                     {result?.stdout ? (
                       <div
-                        className="p-4 rounded-2xl border border-slate-800 space-y-1 shadow-inner"
-                        style={{ backgroundColor: '#090d16', color: '#34d399' }}
+                        className="p-5 rounded-2xl border border-slate-800 space-y-1 shadow-inner"
+                        style={{ backgroundColor: '#0f1729', color: '#34d399' }}
                       >
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                           Đầu ra chương trình (Stdout):
                         </div>
-                        <pre className="whitespace-pre-wrap overflow-x-auto text-xs leading-relaxed font-mono">
+                        <pre className="whitespace-pre-wrap overflow-x-auto text-sm leading-relaxed font-mono tracking-wide">
                           {result.stdout}
                         </pre>
                       </div>

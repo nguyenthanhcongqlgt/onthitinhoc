@@ -165,7 +165,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = React.memo(({
   };
 
   const fontClass =
-    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-xs sm:text-sm';
+    fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-base sm:text-lg' : 'text-sm sm:text-base';
 
   const isMultiLanguage = extractedSnippets.length > 1;
 

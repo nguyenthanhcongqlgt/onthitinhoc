@@ -1151,7 +1151,7 @@ export const ExamRoom: React.FC = () => {
 
       {/* Top Lockdown Header */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md shadow-sm px-4 sm:px-6 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3">
           {/* Brand & Title */}
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 font-bold text-white shadow-sm text-sm shrink-0">
@@ -1285,7 +1285,7 @@ export const ExamRoom: React.FC = () => {
         </div>
 
         {/* Realtime Progress Bar */}
-        <div className="max-w-7xl mx-auto mt-2">
+        <div className="max-w-[1600px] mx-auto mt-2">
           <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-300 rounded-full"
@@ -1296,7 +1296,7 @@ export const ExamRoom: React.FC = () => {
       </header>
 
       {/* Main Examination Layout */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 py-6 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Questions Column */}
         <main className="lg:col-span-3 space-y-8">
           {/* SECTION 1: PHẦN I */}

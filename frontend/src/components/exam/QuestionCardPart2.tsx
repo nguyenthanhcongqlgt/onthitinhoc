@@ -33,9 +33,9 @@ export const QuestionCardPart2: React.FC<QuestionCardPart2Props> = React.memo(({
       : 'Tin học Ứng dụng (ICT)';
 
   const contentFontClass =
-    fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg leading-relaxed' : 'text-base';
+    fontSize === 'sm' ? 'text-base' : fontSize === 'lg' ? 'text-xl leading-relaxed' : 'text-lg leading-relaxed';
   const optionFontClass =
-    fontSize === 'sm' ? 'text-xs' : fontSize === 'lg' ? 'text-base' : 'text-sm';
+    fontSize === 'sm' ? 'text-sm' : fontSize === 'lg' ? 'text-lg' : 'text-base';
 
   return (
     <div

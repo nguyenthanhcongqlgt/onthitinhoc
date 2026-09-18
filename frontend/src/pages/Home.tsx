@@ -183,7 +183,7 @@ export const Home: React.FC = () => {
           1. HEADER & TOP NAVIGATION BAR
       ========================================================================= */}
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* Brand Logo & Name */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
@@ -549,7 +549,7 @@ export const Home: React.FC = () => {
           3. SECTION: CẤU TRÚC ĐỀ THI MỚI CHUẨN BỘ GIÁO DỤC & ĐÀO TẠO
       ========================================================================= */}
       <section id="structure" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950/50 border-y border-slate-800/80">
-        <div className="max-w-7xl mx-auto space-y-12">
+        <div className="max-w-[1600px] mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-3xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-400 border border-indigo-500/20">
               <FileCheck2 className="h-3.5 w-3.5" />
@@ -660,7 +660,7 @@ export const Home: React.FC = () => {
           4. SECTION: CÔNG NGHỆ PHÒNG THI AN TOÀN (ANTI-CHEAT SECURITY)
       ========================================================================= */}
       <section id="security" className="py-20 px-4 sm:px-6 lg:px-8 relative">
-        <div className="max-w-7xl mx-auto space-y-12">
+        <div className="max-w-[1600px] mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-3xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-1 text-xs font-bold text-red-400 border border-red-500/20">
               <Shield className="h-3.5 w-3.5" />
@@ -760,7 +760,7 @@ export const Home: React.FC = () => {
           5. SECTION: QUY TRÌNH 4 BƯỚC THAM GIA THI
       ========================================================================= */}
       <section id="steps" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-950/50 border-t border-slate-800/80">
-        <div className="max-w-7xl mx-auto space-y-12">
+        <div className="max-w-[1600px] mx-auto space-y-12">
           <div className="text-center space-y-3 max-w-3xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-500/10 px-3 py-1 text-xs font-bold text-teal-400 border border-teal-500/20">
               <Clock className="h-3.5 w-3.5" />
@@ -907,7 +907,7 @@ export const Home: React.FC = () => {
           7. FOOTER
       ========================================================================= */}
       <footer id="contact" className="border-t border-slate-800 bg-slate-950 pt-16 pb-12 px-4 sm:px-6 lg:px-8 mt-auto z-10">
-        <div className="max-w-7xl mx-auto space-y-12">
+        <div className="max-w-[1600px] mx-auto space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             {/* School Info */}
             <div className="md:col-span-6 space-y-4">
