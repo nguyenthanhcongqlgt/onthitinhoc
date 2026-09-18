@@ -12,7 +12,7 @@ const CreateSittingModal = React.lazy(() => import('../components/exam/CreateSit
 const SittingResultsModal = React.lazy(() => import('../components/exam/SittingResultsModal').then(m => ({ default: m.SittingResultsModal })));
 const AISettingsModal = React.lazy(() => import('../components/common/AISettingsModal').then(m => ({ default: m.AISettingsModal })));
 const LiveProctorModal = React.lazy(() => import('../components/exam/LiveProctorModal').then(m => ({ default: m.LiveProctorModal })));
-const ExamAnalyticsModal = React.lazy(() => import('../components/exam/ExamAnalyticsModal').then(m => ({ default: m.ExamAnalyticsModal })));
+
 const BulkUserImportModal = React.lazy(() => import('../components/admin/BulkUserImportModal').then(m => ({ default: m.BulkUserImportModal })));
 const ResetPasswordModal = React.lazy(() => import('../components/admin/ResetPasswordModal').then(m => ({ default: m.ResetPasswordModal })));
 const EditUserModal = React.lazy(() => import('../components/admin/EditUserModal').then(m => ({ default: m.EditUserModal })));
@@ -101,7 +101,7 @@ export const TeacherDashboard: React.FC = () => {
   const [showAISettingsModal, setShowAISettingsModal] = useState<boolean>(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState<boolean>(false);
   const [liveProctorExamId, setLiveProctorExamId] = useState<number | null>(null);
-  const [analyticsExamId, setAnalyticsExamId] = useState<number | null>(null);
+
   const [showBulkImportModal, setShowBulkImportModal] = useState<boolean>(false);
   const [resetPasswordTargetUser, setResetPasswordTargetUser] = useState<User | null>(null);
   const [editUserTarget, setEditUserTarget] = useState<User | null>(null);
@@ -1396,9 +1396,9 @@ export const TeacherDashboard: React.FC = () => {
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => setAnalyticsExamId(exam.id)}
+                                      onClick={() => navigate(`/report-exam/${exam.id}`)}
                                       className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
-                                      title="Xem phổ điểm và phân tích độ khó"
+                                      title="Xem báo cáo tổng quan"
                                     >
                                       <BarChart3 className="h-4 w-4" />
                                     </button>
@@ -2257,13 +2257,6 @@ export const TeacherDashboard: React.FC = () => {
           />
         )}
 
-        {/* Exam Analytics Modal */}
-        {analyticsExamId !== null && (
-          <ExamAnalyticsModal
-            examId={analyticsExamId}
-            onClose={() => setAnalyticsExamId(null)}
-          />
-        )}
 
         {/* Bulk User Import Modal */}
         {showBulkImportModal && (

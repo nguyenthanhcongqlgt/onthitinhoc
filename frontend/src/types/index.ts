@@ -373,6 +373,79 @@ export interface ExamAnalyticsData {
     CS: number;
     ICT: number;
   };
+  submission_rate: SubmissionRate;
+  per_student_scores: PerStudentScore[];
+  per_question_breakdown: QuestionBreakdown[];
+  available_classes: string[];
+  selected_class: string;
+  class_student_results: any[];
+  classes_comparison: ClassComparisonItem[];
+}
+
+export interface SubmissionRate {
+  submitted: number;
+  total_assigned: number;
+  percentage: number;
+}
+
+export interface PerStudentScore {
+  student_id: number;
+  student_name: string;
+  student_class: string;
+  total_score: number | null;
+  percentage: number | null;
+  attempts_count: number;
+  status: string;
+  submit_time: string | null;
+  violation_count: number;
+  grade_classification: string | null;
+  grade_classification_display: string;
+}
+
+export interface QuestionBreakdown {
+  question_id: number;
+  order_index: number;
+  part_type: string;
+  branch: string;
+  content_snippet: string;
+  total_attempts: number;
+  correct_count: number;
+  wrong_count: number;
+  partial_count: number;
+  skipped_count: number;
+  correct_percentage: number;
+  wrong_percentage: number;
+  partial_percentage: number;
+  skipped_percentage: number;
+}
+
+export interface ClassComparisonItem {
+  class_name: string;
+  total_submissions: number;
+  average_score: number;
+  highest_score: number;
+  lowest_score: number;
+  excellent_count: number;
+  good_count: number;
+  average_count: number;
+  below_average_count: number;
+  pass_rate: number;
+}
+
+export interface NotStartedStudent {
+  student_id: number;
+  full_name: string;
+  class_name: string;
+  username: string;
+}
+
+export interface RemindStudentsResponse {
+  exam_id: number;
+  exam_title: string;
+  total_assigned: number;
+  total_not_started: number;
+  not_started_students: NotStartedStudent[];
+  message: string;
 }
 
 export interface StudentAnalyticsData {

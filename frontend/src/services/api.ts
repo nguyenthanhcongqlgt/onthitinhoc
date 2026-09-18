@@ -12,6 +12,7 @@ import {
   QuestionFeedback,
   ClassRoom,
   ClassRoomDetail,
+  RemindStudentsResponse,
 } from '../types';
 
 const getApiBaseUrl = () => {
@@ -242,6 +243,16 @@ export const examsApi = {
   },
   getExamAnalytics: async (examId: number): Promise<ExamAnalyticsData> => {
     const res = await apiClient.get(`/exams/${examId}/analytics/`);
+    return res.data;
+  },
+  remindStudents: async (examId: number): Promise<RemindStudentsResponse> => {
+    const res = await apiClient.post(`/exams/${examId}/remind-students/`);
+    return res.data;
+  },
+  exportExcel: async (examId: number) => {
+    const res = await apiClient.get(`/exams/${examId}/export-excel/`, {
+      responseType: 'blob',
+    });
     return res.data;
   },
   exportDocx: async (examId: number) => {

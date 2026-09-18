@@ -16,6 +16,7 @@ const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.R
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
 const ExamRoom = lazy(() => import('./pages/ExamRoom').then(m => ({ default: m.ExamRoom })));
 const ExamResult = lazy(() => import('./pages/ExamResult').then(m => ({ default: m.ExamResult })));
+const ExamReport = lazy(() => import('./pages/ExamReport').then(m => ({ default: m.ExamReport })));
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m => ({ default: m.TeacherDashboard })));
 const ExamCreator = lazy(() => import('./pages/ExamCreator').then(m => ({ default: m.ExamCreator })));
 const CodePlayground = lazy(() => import('./pages/CodePlayground').then(m => ({ default: m.CodePlayground })));
@@ -161,6 +162,14 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute>
                       <ExamResult />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/report-exam/:examId"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                      <ExamReport />
                     </ProtectedRoute>
                   }
                 />

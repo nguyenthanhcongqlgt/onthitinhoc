@@ -105,7 +105,7 @@ class Exam(models.Model):
         ASSIGNED = 'ASSIGNED', 'Chỉ định theo Lớp / Đội tuyển'
 
     class MatrixPreset(models.TextChoices):
-        HSG_NINHBINH = 'HSG_NINHBINH', 'Chuẩn Đề thi HSG Tỉnh Ninh Bình (30 câu P1 = 12đ, 7 câu P2 = 8đ, Thang 20đ)'
+        HSG_NINHBINH = 'HSG_NINHBINH', 'Chuẩn Đề thi HSG (30 câu P1 = 12đ, 7 câu P2 = 8đ, Thang 20đ)'
         HSG_QUAT_LAM = 'HSG_QUAT_LAM', 'Chuẩn HSG THPT Quất Lâm (30 câu P1 = 12đ, 7 câu P2 = 8đ, Thang 20đ)'
         BGD_2025 = 'BGD_2025', 'Chuẩn Đề thi Tốt nghiệp THPT Bộ GD&ĐT (24 câu P1 = 6đ, 6 câu P2 = 4đ, Thang 10đ)'
         LINEAR_EQUAL = 'LINEAR_EQUAL', 'Tuyến tính Đều (1=0.25, 2=0.5, 3=0.75, 4=1.0đ)'

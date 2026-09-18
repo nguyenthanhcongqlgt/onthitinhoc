@@ -16,7 +16,9 @@ from .views import (
     ExamPreviewView,
     QuestionFeedbackViewSet,
     ExamSittingViewSet,
-    ExamFolderViewSet
+    ExamFolderViewSet,
+    RemindStudentsView,
+    ExportExamExcelView
 )
 
 router = DefaultRouter()
@@ -37,6 +39,8 @@ urlpatterns = [
     path('exams/<int:exam_id>/analytics/', ExamAnalyticsView.as_view(), name='exam_analytics'),
     path('exams/<int:exam_id>/preview/', ExamPreviewView.as_view(), name='exam_preview'),
     path('exams/<int:exam_id>/verify-code/', VerifyAccessCodeView.as_view(), name='verify_access_code'),
+    path('exams/<int:exam_id>/remind-students/', RemindStudentsView.as_view(), name='remind_students'),
+    path('exams/<int:exam_id>/export-excel/', ExportExamExcelView.as_view(), name='export_exam_excel'),
     path('exams/quick-join/', QuickJoinExamView.as_view(), name='quick_join_exam'),
     path('', include(router.urls)),
 ]

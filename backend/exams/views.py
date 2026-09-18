@@ -321,42 +321,13 @@ class ExamViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def export_docx(self, request, pk=None):
-        from docx import Document
         from django.http import HttpResponse
-        import io
+        from .template_generator import generate_exam_docx
 
         exam = self.get_object()
-        document = Document()
+        buffer = generate_exam_docx(exam)
         
-        # Add Exam Title
-        document.add_heading(exam.title, 0)
-        
-        if exam.description:
-            document.add_paragraph(exam.description)
-            
-        questions = exam.questions.all().order_by('order_index', 'id')
-        for q in questions:
-            # Question content
-            p = document.add_paragraph()
-            p.add_run(f"Câu {q.order_index}: ").bold = True
-            p.add_run(q.content)
-            
-            # Question options
-            options = q.options.all().order_by('order_index', 'id')
-            labels = ['A', 'B', 'C', 'D', 'E', 'F']
-            for idx, opt in enumerate(options):
-                lbl = labels[idx] if idx < len(labels) else str(idx)
-                # If label exists in option, use it, otherwise use generated label
-                lbl_to_use = opt.label if opt.label else lbl
-                opt_p = document.add_paragraph()
-                opt_p.add_run(f"{lbl_to_use}. {opt.content}")
-
-        # Save to BytesIO
-        f = io.BytesIO()
-        document.save(f)
-        f.seek(0)
-        
-        response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response = HttpResponse(buffer.getvalue(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
         response['Content-Disposition'] = f'attachment; filename="exam.docx"'
         return response
 
@@ -744,8 +715,9 @@ class ImportDocxExamView(APIView):
             return Response(parsed_data)
 
         # Action == 'save': Create or Update Exam & Questions in DB
+        # Use extracted title, fallback to default if missing
         exam_meta = parsed_data.get('exam_metadata', {})
-        custom_title = request.data.get('title', '').strip() or exam_meta.get('title', 'ĐỀ THI TIN HỌC HSG THPT QUẤT LÂM')
+        custom_title = request.data.get('title', '').strip() or exam_meta.get('title', 'ĐỀ KIỂM TRA HỌC SINH GIỎI MÔN TIN HỌC')
         duration_minutes = int(request.data.get('duration_minutes') or exam_meta.get('duration_minutes', 50))
         matrix_preset = request.data.get('matrix_preset') or exam_meta.get('matrix_preset', 'HSG_QUAT_LAM')
         default_type = Exam.ExamType.TN_THPT if matrix_preset == 'BGD_2025' else Exam.ExamType.HSG
@@ -1303,6 +1275,8 @@ class ExamAnalyticsView(APIView):
 
     def get(self, request, exam_id):
         from assessment.models import ExamSession, StudentAnswer
+        from authentication.models import User, ClassRoom
+        from exams.models import SittingAssignment
         from django.utils import timezone
 
         exam = get_object_or_404(Exam, id=exam_id)
@@ -1396,7 +1370,10 @@ class ExamAnalyticsView(APIView):
                 "available_classes": available_classes,
                 "selected_class": selected_class,
                 "class_student_results": [],
-                "classes_comparison": classes_comparison
+                "classes_comparison": classes_comparison,
+                "submission_rate": {"submitted": 0, "total_assigned": 0, "percentage": 0.0},
+                "per_student_scores": [],
+                "per_question_breakdown": []
             })
 
         scores = [float(s.total_score) for s in sessions]
@@ -1512,6 +1489,118 @@ class ExamAnalyticsView(APIView):
                 "competency_category": q.competency_category
             })
 
+        # --- Submission Rate ---
+        total_assigned = 0
+        # Try SittingAssignment first
+        sitting_assignments = SittingAssignment.objects.filter(sitting__exams=exam)
+        if sitting_assignments.exists():
+            total_assigned = sitting_assignments.values('student').distinct().count()
+        else:
+            # Count from assigned_classes
+            if exam.assigned_classes and exam.assigned_classes.strip():
+                assigned_class_list = [c.strip() for c in exam.assigned_classes.split(',') if c.strip()]
+                if any(c.lower() == 'toàn trường' for c in assigned_class_list):
+                    total_assigned = User.objects.filter(role=User.Role.STUDENT, status=User.Status.ACTIVE).count()
+                else:
+                    from django.db.models import Q
+                    q = Q()
+                    for c in assigned_class_list:
+                        q |= Q(class_name__iexact=c) | Q(enrolled_classrooms__name__iexact=c)
+                    total_assigned = User.objects.filter(q, role=User.Role.STUDENT, status=User.Status.ACTIVE).distinct().count()
+            else:
+                total_assigned = total_submissions  # fallback
+
+        submission_rate = {
+            "submitted": total_submissions,
+            "total_assigned": max(total_assigned, total_submissions),
+            "percentage": round((total_submissions / max(total_assigned, 1)) * 100, 2)
+        }
+
+        # --- Per Student Scores (include not-started students) ---
+        per_student_scores = []
+        submitted_student_ids = set()
+        for sr in class_student_results:
+            submitted_student_ids.add(sr['student_id'])
+            per_student_scores.append({
+                "student_id": sr['student_id'],
+                "student_name": sr['full_name'],
+                "student_class": sr['class_name'],
+                "total_score": sr['total_score'],
+                "percentage": round((sr['total_score'] / max_scale) * 100, 1) if max_scale > 0 else 0,
+                "attempts_count": ExamSession.objects.filter(exam=exam, student_id=sr['student_id']).count(),
+                "status": sr['status'],
+                "submit_time": sr['submit_time'],
+                "violation_count": sr['violation_count'],
+                "grade_classification": sr['grade_classification'],
+                "grade_classification_display": sr['grade_classification_display']
+            })
+
+        # Add not-started students
+        if exam.assigned_classes and exam.assigned_classes.strip():
+            assigned_class_list_2 = [c.strip() for c in exam.assigned_classes.split(',') if c.strip()]
+            if any(c.lower() == 'toàn trường' for c in assigned_class_list_2):
+                all_assigned = User.objects.filter(role=User.Role.STUDENT, status=User.Status.ACTIVE)
+            else:
+                from django.db.models import Q
+                q2 = Q()
+                for c in assigned_class_list_2:
+                    q2 |= Q(class_name__iexact=c) | Q(enrolled_classrooms__name__iexact=c)
+                all_assigned = User.objects.filter(q2, role=User.Role.STUDENT, status=User.Status.ACTIVE).distinct()
+            
+            for student in all_assigned:
+                if student.id not in submitted_student_ids:
+                    enrolled_first = student.enrolled_classrooms.first()
+                    cls_display = student.class_name or (enrolled_first.name if enrolled_first else 'Chưa phân lớp')
+                    per_student_scores.append({
+                        "student_id": student.id,
+                        "student_name": student.full_name or student.username,
+                        "student_class": cls_display,
+                        "total_score": None,
+                        "percentage": None,
+                        "attempts_count": 0,
+                        "status": "NOT_STARTED",
+                        "submit_time": None,
+                        "violation_count": 0,
+                        "grade_classification": None,
+                        "grade_classification_display": "Chưa làm"
+                    })
+
+        # --- Per Question Breakdown ---
+        per_question_breakdown = []
+        for q in questions_qs:
+            answers = StudentAnswer.objects.filter(session__in=sessions, question=q)
+            ans_count = answers.count()
+            
+            if q.part_type == Question.PartType.PART_I:
+                correct_count = answers.filter(is_correct=True).count()
+                wrong_count = answers.filter(is_correct=False).count()
+                partial_count = 0
+                skipped_count = total_submissions - ans_count
+            else:
+                # Part II: 4 subitems
+                correct_count = answers.filter(correct_subitems_count=4).count()
+                wrong_count = answers.filter(correct_subitems_count=0).count()
+                partial_count = answers.filter(correct_subitems_count__gt=0, correct_subitems_count__lt=4).count()
+                skipped_count = total_submissions - ans_count
+            
+            total_for_pct = max(total_submissions, 1)
+            per_question_breakdown.append({
+                "question_id": q.id,
+                "order_index": q.order_index,
+                "part_type": q.part_type,
+                "branch": q.branch,
+                "content_snippet": (q.content[:60] + '...') if len(q.content) > 60 else q.content,
+                "total_attempts": ans_count,
+                "correct_count": correct_count,
+                "wrong_count": wrong_count,
+                "partial_count": partial_count,
+                "skipped_count": skipped_count,
+                "correct_percentage": round((correct_count / total_for_pct) * 100, 1),
+                "wrong_percentage": round((wrong_count / total_for_pct) * 100, 1),
+                "partial_percentage": round((partial_count / total_for_pct) * 100, 1),
+                "skipped_percentage": round((skipped_count / total_for_pct) * 100, 1)
+            })
+
         return Response({
             "exam_id": exam.id,
             "exam_title": exam.title,
@@ -1530,8 +1619,143 @@ class ExamAnalyticsView(APIView):
             "available_classes": available_classes,
             "selected_class": selected_class,
             "class_student_results": class_student_results,
-            "classes_comparison": classes_comparison
+            "classes_comparison": classes_comparison,
+            "submission_rate": submission_rate,
+            "per_student_scores": per_student_scores,
+            "per_question_breakdown": per_question_breakdown
         })
+
+
+class RemindStudentsView(APIView):
+    """Send in-app notification to students who haven't taken the exam yet."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, exam_id):
+        from assessment.models import ExamSession
+        from authentication.models import User, ClassRoom
+
+        exam = get_object_or_404(Exam, id=exam_id)
+        if not (request.user.role in [User.Role.ADMIN, User.Role.TEACHER] or request.user.is_superuser):
+            return Response({"detail": "Không có quyền."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Find students who already submitted
+        submitted_ids = set(ExamSession.objects.filter(
+            exam=exam,
+            status__in=['SUBMITTED', 'LOCKED_VIOLATION', 'IN_PROGRESS']
+        ).values_list('student_id', flat=True))
+
+        # Find all assigned students
+        not_started_students = []
+        if exam.assigned_classes and exam.assigned_classes.strip():
+            assigned_class_list = [c.strip() for c in exam.assigned_classes.split(',') if c.strip()]
+            if any(c.lower() == 'toàn trường' for c in assigned_class_list):
+                all_students = User.objects.filter(role=User.Role.STUDENT, status=User.Status.ACTIVE)
+            else:
+                from django.db.models import Q
+                q = Q()
+                for c in assigned_class_list:
+                    q |= Q(class_name__iexact=c) | Q(enrolled_classrooms__name__iexact=c)
+                all_students = User.objects.filter(q, role=User.Role.STUDENT, status=User.Status.ACTIVE).distinct()
+            
+            not_started_students = [
+                {
+                    "student_id": s.id,
+                    "full_name": s.full_name or s.username,
+                    "class_name": s.class_name or 'Chưa phân lớp',
+                    "username": s.username
+                }
+                for s in all_students if s.id not in submitted_ids
+            ]
+
+        return Response({
+            "exam_id": exam.id,
+            "exam_title": exam.title,
+            "total_assigned": len(not_started_students) + len(submitted_ids),
+            "total_not_started": len(not_started_students),
+            "not_started_students": not_started_students,
+            "message": f"Có {len(not_started_students)} học sinh chưa làm bài kiểm tra '{exam.title}'."
+        })
+
+
+class ExportExamExcelView(APIView):
+    """Export exam results as Excel file."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, exam_id):
+        import openpyxl
+        from io import BytesIO
+        from django.http import HttpResponse
+        from assessment.models import ExamSession
+        from authentication.models import User
+
+        exam = get_object_or_404(Exam, id=exam_id)
+        if not (request.user.role in [User.Role.ADMIN, User.Role.TEACHER] or request.user.is_superuser):
+            return Response({"detail": "Không có quyền."}, status=status.HTTP_403_FORBIDDEN)
+
+        sessions = ExamSession.objects.filter(
+            exam=exam,
+            status__in=['SUBMITTED', 'LOCKED_VIOLATION']
+        ).select_related('student').order_by('-total_score')
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Bảng điểm'
+
+        # Header row
+        headers = ['STT', 'Họ và tên', 'Lớp', 'Mã HS', 'Điểm P1', 'Điểm P2', 'Tổng điểm', 'Xếp loại', 'Thời gian nộp', 'Vi phạm']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = openpyxl.styles.Font(bold=True)
+
+        max_scale = float(exam.part1_total_points + exam.part2_total_points) or 20.0
+
+        for idx, s in enumerate(sessions, 1):
+            sc = float(s.total_score)
+            if sc >= 0.8 * max_scale:
+                grade = 'Xuất sắc'
+            elif sc >= 0.7 * max_scale:
+                grade = 'Giỏi'
+            elif sc >= 0.55 * max_scale:
+                grade = 'Khá'
+            elif sc >= 0.4 * max_scale:
+                grade = 'Trung bình'
+            else:
+                grade = 'Chưa đạt'
+
+            enrolled_first = s.student.enrolled_classrooms.first()
+            cls_display = s.student.class_name or (enrolled_first.name if enrolled_first else '')
+
+            ws.append([
+                idx,
+                s.student.full_name or s.student.username,
+                cls_display,
+                s.student.student_id or s.student.username,
+                float(s.part1_score),
+                float(s.part2_score),
+                float(s.total_score),
+                grade,
+                s.submit_time.strftime('%H:%M:%S %d/%m/%Y') if s.submit_time else '-',
+                s.violation_count
+            ])
+
+        # Auto-fit column widths
+        for col in ws.columns:
+            max_length = 0
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col[0].column_letter].width = min(max_length + 3, 40)
+
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="bang_diem_{exam.id}.xlsx"'
+        return response
 
 
 class QuestionFeedbackViewSet(viewsets.ModelViewSet):

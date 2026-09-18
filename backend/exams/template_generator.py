@@ -24,20 +24,20 @@ def generate_exam_docx_template() -> io.BytesIO:
     # Document Header
     p_school = doc.add_paragraph()
     p_school.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r_school = p_school.add_run("SỞ GD&ĐT NINH BÌNH\nTRƯỜNG THPT QUẤT LÂM - NINH BÌNH\n")
+    r_school = p_school.add_run("TRƯỜNG THPT QUẤT LÂM\n")
     r_school.bold = True
     r_school.font.size = Pt(13)
 
     p_title = doc.add_paragraph()
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    r_title = p_title.add_run("ĐỀ THI KHẢO SÁT CHỌN ĐỘI TUYỂN HSG TIN HỌC 2025\n")
+    r_title = p_title.add_run("ĐỀ KIỂM TRA HỌC SINH GIỎI MÔN TIN HỌC\n")
     r_title.bold = True
     r_title.font.size = Pt(14)
     r_title.font.color.rgb = RGBColor(20, 73, 225)
 
     # Metadata Header Tags
     p_meta = doc.add_paragraph()
-    p_meta.add_run("[DE_THI] ĐỀ KHẢO SÁT CHỌN ĐỘI TUYỂN HSG TIN HỌC 2025 - THPT QUẤT LÂM - NINH BÌNH\n").bold = True
+    p_meta.add_run("[DE_THI] ĐỀ KIỂM TRA HỌC SINH GIỎI MÔN TIN HỌC\n").bold = True
     p_meta.add_run("[THOI_GIAN] 50\n").bold = True
     p_meta.add_run("[MA_TRAN] HSG_QUAT_LAM\n\n").bold = True
 
@@ -164,6 +164,87 @@ def generate_exam_docx_template() -> io.BytesIO:
     table_p2.rows[1].cells[1].text = "a) Đúng\nb) Sai\nc) Sai\nd) Đúng"
     table_p2.rows[1].cells[2].text = "a) Đúng\nb) Sai\nc) Đúng\nd) Sai"
     table_p2.rows[1].cells[3].text = "a) Đúng\nb) Sai\nc) Đúng\nd) Sai"
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer
+
+def generate_exam_docx(exam) -> io.BytesIO:
+    """
+    Exports a specific Exam object to a Word document.
+    """
+    doc = docx.Document()
+    
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Times New Roman'
+    font.size = Pt(12)
+
+    p_school = doc.add_paragraph()
+    p_school.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r_school = p_school.add_run("TRƯỜNG THPT QUẤT LÂM\n")
+    r_school.bold = True
+    r_school.font.size = Pt(13)
+
+    p_title = doc.add_paragraph()
+    p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_str = exam.title.upper() if exam.title else "ĐỀ KIỂM TRA HỌC SINH GIỎI MÔN TIN HỌC"
+    r_title = p_title.add_run(f"{title_str}\n")
+    r_title.bold = True
+    r_title.font.size = Pt(14)
+    r_title.font.color.rgb = RGBColor(20, 73, 225)
+
+    p_meta = doc.add_paragraph()
+    p_meta.add_run(f"[DE_THI] {exam.title or 'ĐỀ KIỂM TRA HỌC SINH GIỎI'}\n").bold = True
+    p_meta.add_run(f"[THOI_GIAN] {exam.duration}\n").bold = True
+    p_meta.add_run(f"[MA_TRAN] {exam.matrix_preset}\n\n").bold = True
+
+    questions = exam.questions.all().order_by('part_type', 'branch', 'order_index')
+    current_part = None
+    current_branch = None
+
+    for q in questions:
+        if q.part_type != current_part:
+            current_part = q.part_type
+            p_part = doc.add_paragraph()
+            r_part = p_part.add_run(f"PHẦN {current_part}.\n")
+            r_part.bold = True
+            r_part.font.color.rgb = RGBColor(20, 73, 225)
+            
+        if q.part_type == 'II' and q.branch != current_branch:
+            current_branch = q.branch
+            p_branch = doc.add_paragraph()
+            if q.branch == 'COMMON':
+                p_branch.add_run("A. Phần chung cho tất cả các thí sinh\n").bold = True
+            else:
+                p_branch.add_run(f"B. Phần riêng ({q.branch})\n[PHAN_II_{q.branch}] Chuyên đề\n").bold = True
+
+        p_q = doc.add_paragraph()
+        q_label = f"Câu {q.order_index}."
+        if q.competency_category or q.difficulty_level:
+            cat = q.competency_category or ""
+            diff = q.difficulty_level or ""
+            q_label += f" [{cat}] [{diff}]"
+            
+        p_q.add_run(f"{q_label} ").bold = True
+        
+        for line in str(q.content or "").split('\n'):
+            p_q.add_run(f"{line}\n")
+            
+        options = q.options.all().order_by('order_index')
+        for opt in options:
+            p_opt = doc.add_paragraph()
+            lbl = opt.label or "A"
+            marker = "*" if opt.is_correct else ""
+            r_opt = p_opt.add_run(f"{lbl}{marker}. {opt.content}\n")
+            if opt.is_correct:
+                r_opt.font.color.rgb = RGBColor(255, 0, 0)
+                r_opt.bold = True
+                
+        if q.explanation:
+            p_expl = doc.add_paragraph()
+            p_expl.add_run(f"[HUONG_DAN] {q.explanation}\n")
 
     buffer = io.BytesIO()
     doc.save(buffer)

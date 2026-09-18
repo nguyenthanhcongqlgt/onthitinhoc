@@ -1139,7 +1139,7 @@ class DocxExamParser:
         """
         warnings: List[str] = []
         exam_metadata = {
-            'title': 'ĐỀ THI TIN HỌC HSG THPT QUẤT LÂM',
+            'title': 'ĐỀ KIỂM TRA HỌC SINH GIỎI MÔN TIN HỌC',
             'duration_minutes': 50,
             'description': ''
         }
