@@ -416,6 +416,7 @@ class UserAISetting(models.Model):
         return f"{k[:6]}••••••••••••{k[-4:]}"
 
 
+
 class QuestionFeedback(models.Model):
     class FeedbackType(models.TextChoices):
         WRONG_KEY = 'WRONG_KEY', 'Sai đáp án'

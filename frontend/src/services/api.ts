@@ -241,8 +241,8 @@ export const examsApi = {
     const res = await apiClient.delete(`/exams/${examId}/`);
     return res.data;
   },
-  getExamAnalytics: async (examId: number): Promise<ExamAnalyticsData> => {
-    const res = await apiClient.get(`/exams/${examId}/analytics/`);
+  getExamAnalytics: async (examId: number, params?: string): Promise<ExamAnalyticsData> => {
+    const res = await apiClient.get(`/exams/${examId}/analytics/${params || ''}`);
     return res.data;
   },
   remindStudents: async (examId: number): Promise<RemindStudentsResponse> => {
@@ -321,6 +321,14 @@ export const examsApi = {
     document.body.appendChild(link);
     link.click();
     link.remove();
+  },
+  matrixValidate: async (payload: any) => {
+    const res = await apiClient.post('/exams/matrix-validate/', payload);
+    return res.data;
+  },
+  matrixGenerate: async (payload: any) => {
+    const res = await apiClient.post('/exams/matrix-generate/', payload);
+    return res.data;
   },
 };
 
@@ -612,8 +620,16 @@ export const bankApi = {
     const res = await apiClient.delete(`/bank/questions/${id}/`);
     return res.data;
   },
+  aiSave: async (payload: any) => {
+    const res = await apiClient.post('/bank/questions/ai_save/', payload);
+    return res.data;
+  },
   cloneToExam: async (questionId: number, examId: number) => {
     const res = await apiClient.post(`/bank/questions/${questionId}/clone_to_exam/`, { exam_id: examId });
     return res.data;
   },
+  generateExams: async (data: any) => {
+    const res = await apiClient.post('/bank/generate/', data);
+    return res.data;
+  }
 };

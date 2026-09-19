@@ -531,17 +531,21 @@ export const TeacherDashboard: React.FC = () => {
             <span>Quản Lý Lớp Học ({classRooms.length})</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('BANK')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
-              activeTab === 'BANK'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-            }`}
+          <Link
+            to="/teacher/question-bank"
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-slate-200"
           >
             <Layers className="h-4 w-4" />
             <span>Thư Viện Câu Hỏi ({bankQuestions.length})</span>
-          </button>
+          </Link>
+
+          <Link
+            to="/teacher/auto-generate"
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+          >
+            <Settings2 className="h-4 w-4" />
+            <span>Tạo Đề Tự Động</span>
+          </Link>
 
           <button
             onClick={() => setActiveTab('FEEDBACKS')}

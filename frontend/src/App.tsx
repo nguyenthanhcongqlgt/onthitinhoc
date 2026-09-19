@@ -21,6 +21,8 @@ const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').then(m =>
 const ExamCreator = lazy(() => import('./pages/ExamCreator').then(m => ({ default: m.ExamCreator })));
 const CodePlayground = lazy(() => import('./pages/CodePlayground').then(m => ({ default: m.CodePlayground })));
 const ChangePassword = lazy(() => import('./pages/ChangePassword').then(m => ({ default: m.ChangePassword })));
+const QuestionBank = lazy(() => import('./pages/QuestionBank').then(m => ({ default: m.QuestionBank })));
+const AutoExamGenerator = lazy(() => import('./pages/AutoExamGenerator').then(m => ({ default: m.AutoExamGenerator })));
 const Forbidden = lazy(() => import('./pages/Forbidden').then(m => ({ default: m.Forbidden })));
 const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
 
@@ -191,6 +193,22 @@ export const App: React.FC = () => {
                   element={
                     <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
                       <TeacherDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/teacher/question-bank"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                      <QuestionBank />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/teacher/auto-generate"
+                  element={
+                    <ProtectedRoute allowedRoles={['TEACHER', 'ADMIN']}>
+                      <AutoExamGenerator />
                     </ProtectedRoute>
                   }
                 />

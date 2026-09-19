@@ -48,7 +48,7 @@ export const ExamReport: React.FC = () => {
     setError('');
     try {
       const params = classFilter && classFilter !== 'ALL' ? `?class_name=${classFilter}` : '';
-      const res = await examsApi.getExamAnalytics(Number(examId));
+      const res = await examsApi.getExamAnalytics(Number(examId), params);
       setData(res);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Không thể tải dữ liệu phân tích.');
@@ -122,7 +122,9 @@ export const ExamReport: React.FC = () => {
       } else if (sortBy === 'score_asc') {
         return (a.total_score ?? 999) - (b.total_score ?? 999);
       } else {
-        return a.student_name.localeCompare(b.student_name, 'vi');
+        const nameA = a.student_name || '';
+        const nameB = b.student_name || '';
+        return nameA.localeCompare(nameB, 'vi');
       }
     });
 

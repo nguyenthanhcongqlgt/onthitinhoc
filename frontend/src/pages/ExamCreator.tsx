@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
-import { examsApi, aiApi, foldersApi } from '../services/api';
+import { examsApi, aiApi, foldersApi, bankApi } from '../services/api';
 import { ExamFolder } from '../types';
 import { ConfirmModal } from '../components/common/ConfirmModal';
 import { CodeViewer } from '../components/exam/CodeViewer';
@@ -1334,6 +1334,7 @@ export const ExamCreator: React.FC = () => {
   const [showAISolveModal, setShowAISolveModal] = useState<boolean>(false);
   const [isAISolving, setIsAISolving] = useState<boolean>(false);
   const [solvingSingleIndex, setSolvingSingleIndex] = useState<number | null>(null);
+  const [savingToBankIndex, setSavingToBankIndex] = useState<number | null>(null);
   const [aiSolveMode, setAISolveMode] = useState<'unanswered_only' | 'all' | 'selected_only'>('unanswered_only');
   const [selectedQuestionsToSolve, setSelectedQuestionsToSolve] = useState<number[]>([]);
   const [aiIncludeExplain, setAIIncludeExplain] = useState<boolean>(true);
@@ -1358,6 +1359,19 @@ export const ExamCreator: React.FC = () => {
 
   const handleDeselectAllQuestionsToSolve = () => {
     setSelectedQuestionsToSolve([]);
+  };
+
+    const handleSaveToBank = async (qIdx: number) => {
+    try {
+      setSavingToBankIndex(qIdx);
+      const q = questions[qIdx];
+      const res = await bankApi.aiSave(q);
+      toast.success(res.message);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Lỗi khi lưu vào ngân hàng');
+    } finally {
+      setSavingToBankIndex(null);
+    }
   };
 
   const handleSolveSingleQuestion = async (globalIdx: number) => {
@@ -2306,6 +2320,24 @@ export const ExamCreator: React.FC = () => {
                               </span>
 
                               {/* Quick AI Solve Single Question Button */}
+                                                            <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSaveToBank(globalIdx);
+                                }}
+                                disabled={savingToBankIndex === globalIdx}
+                                className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 px-2 py-1 rounded-lg transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                                title="Lưu câu hỏi này vào Ngân hàng (AI sẽ tự động nhận diện Chủ đề và Mức độ)"
+                              >
+                                {savingToBankIndex === globalIdx ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Save className="h-3 w-3" />
+                                )}
+                                <span>{savingToBankIndex === globalIdx ? 'AI đang phân tích...' : '⭐ Lưu vào Ngân hàng'}</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -2731,6 +2763,24 @@ export const ExamCreator: React.FC = () => {
                               </span>
 
                               {/* Quick AI Solve Single Question Button */}
+                                                            <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSaveToBank(globalIdx);
+                                }}
+                                disabled={savingToBankIndex === globalIdx}
+                                className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 px-2 py-1 rounded-lg transition-all shadow-sm disabled:opacity-50 cursor-pointer"
+                                title="Lưu câu hỏi này vào Ngân hàng (AI sẽ tự động nhận diện Chủ đề và Mức độ)"
+                              >
+                                {savingToBankIndex === globalIdx ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Save className="h-3 w-3" />
+                                )}
+                                <span>{savingToBankIndex === globalIdx ? 'AI đang phân tích...' : '⭐ Lưu vào Ngân hàng'}</span>
+                              </button>
+
                               <button
                                 type="button"
                                 onClick={(e) => {

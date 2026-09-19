@@ -361,6 +361,66 @@ class QuestionViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Bạn không có quyền thêm câu hỏi vào đề thi này.")
         serializer.save()
 
+    @action(detail=True, methods=['post'])
+    def save_to_bank(self, request, pk=None):
+        question = self.get_object()
+        
+        # Format options for AI
+        options_text = []
+        for opt in question.options.all():
+            options_text.append(f"{opt.label}: {opt.content} ({'Đúng' if opt.is_correct else 'Sai'})")
+            
+        from .ai_solver import AISolverEngine
+        from .models import UserAISetting, BankQuestion, BankQuestionOption
+        
+        # 1. Gọi AI để phân loại (nếu admin/giáo viên cấu hình)
+        try:
+            ai_setting = UserAISetting.objects.get(user=request.user)
+            ai_result = AISolverEngine.classify_question(
+                provider=ai_setting.provider,
+                api_key=ai_setting.get_api_key(),
+                model=ai_setting.model,
+                base_url=ai_setting.base_url,
+                question_text=question.content,
+                options=options_text
+            )
+            comp_cat = ai_result['competency_category']
+            diff_level = ai_result['difficulty_level']
+        except UserAISetting.DoesNotExist:
+            comp_cat = question.competency_category
+            diff_level = question.difficulty_level
+            
+        # 2. Copy sang Ngân hàng
+        bank_q = BankQuestion.objects.create(
+            creator=request.user,
+            part_type=question.part_type,
+            branch=question.branch,
+            content=question.content,
+            code_snippet=question.code_snippet,
+            code_language=question.code_language,
+            competency_category=comp_cat,
+            difficulty_level=diff_level,
+            explanation=question.explanation
+        )
+        
+        for opt in question.options.all():
+            BankQuestionOption.objects.create(
+                question=bank_q,
+                label=opt.label,
+                content=opt.content,
+                code_snippet=opt.code_snippet,
+                is_correct=opt.is_correct,
+                order_index=opt.order_index,
+                explanation=opt.explanation
+            )
+            
+        return Response({
+            "message": f"Đã lưu vào Ngân hàng! AI nhận diện: {bank_q.get_competency_category_display()} - Mức {bank_q.get_difficulty_level_display()}.",
+            "bank_question_id": bank_q.id,
+            "competency_category": comp_cat,
+            "difficulty_level": diff_level
+        })
+
 
 class VerifyAccessCodeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1378,10 +1438,10 @@ class ExamAnalyticsView(APIView):
                 "per_question_breakdown": []
             })
 
-        scores = [float(s.total_score) for s in sessions]
-        avg_score = round(sum(scores) / total_submissions, 2)
-        highest_score = round(max(scores), 2)
-        lowest_score = round(min(scores), 2)
+        scores = [float(s.total_score) for s in sessions if getattr(s, 'total_score', None) is not None]
+        avg_score = round(sum(scores) / max(total_submissions, 1), 2)
+        highest_score = round(max(scores), 2) if scores else 0.0
+        lowest_score = round(min(scores), 2) if scores else 0.0
 
         # 5. Score distribution brackets
         step = max_scale / 5.0

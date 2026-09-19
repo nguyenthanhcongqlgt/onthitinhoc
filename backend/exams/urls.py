@@ -20,6 +20,7 @@ from .views import (
     RemindStudentsView,
     ExportExamExcelView
 )
+from .matrix_views import MatrixValidationView, GenerateExamFromMatrixView
 
 router = DefaultRouter()
 router.register(r'folders', ExamFolderViewSet, basename='folder')
@@ -42,5 +43,7 @@ urlpatterns = [
     path('exams/<int:exam_id>/remind-students/', RemindStudentsView.as_view(), name='remind_students'),
     path('exams/<int:exam_id>/export-excel/', ExportExamExcelView.as_view(), name='export_exam_excel'),
     path('exams/quick-join/', QuickJoinExamView.as_view(), name='quick_join_exam'),
+    path('exams/matrix-validate/', MatrixValidationView.as_view(), name='matrix_validate'),
+    path('exams/matrix-generate/', GenerateExamFromMatrixView.as_view(), name='matrix_generate'),
     path('', include(router.urls)),
 ]

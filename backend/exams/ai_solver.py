@@ -104,6 +104,86 @@ class AISolverEngine:
             }
 
     @classmethod
+    def classify_question(
+        cls,
+        provider: str,
+        api_key: str,
+        model: Optional[str],
+        base_url: Optional[str],
+        question_text: str,
+        options: List[str]
+    ) -> Dict[str, str]:
+        """
+        Dùng AI để phân loại chủ đề (CompetencyCategory) và độ khó (DifficultyLevel)
+        """
+        prompt = f"""
+Bạn là một chuyên gia đánh giá đề thi môn Tin học (Khoa học Máy tính & Tin học Ứng dụng).
+Hãy phân tích nội dung câu hỏi sau và phân loại nó vào đúng 1 trong các Mức độ khó và 1 trong các Chủ đề dưới đây.
+
+[MỨC ĐỘ KHÓ]
+- NB: Nhận biết
+- TH: Thông hiểu
+- VD: Vận dụng
+- VDC: Vận dụng cao
+
+[CHỦ ĐỀ KIẾN THỨC]
+- PROG_BASIC: Lập trình & Cú pháp cơ bản
+- ALGO_DS: Thuật toán & Cấu trúc Dữ liệu
+- OPTIMIZATION: Tối ưu hóa & Độ phức tạp
+- DB_NETWORK: Cơ sở Dữ liệu & Mạng máy tính
+- ICT_APP: Ứng dụng Tin học & Đa phương tiện
+
+[CÂU HỎI CẦN PHÂN TÍCH]
+Nội dung: {question_text}
+Các phương án: {', '.join(options)}
+
+[YÊU CẦU ĐẦU RA]
+Bạn CHỈ ĐƯỢC PHÉP trả về một object JSON (không chứa markdown) đúng định dạng sau, không thêm bất kỳ văn bản nào khác:
+{{
+  "competency_category": "<CHỌN_1_TRONG_CÁC_MÃ_CHỦ_ĐỀ_TRÊN>",
+  "difficulty_level": "<CHỌN_1_TRONG_CÁC_MÃ_ĐỘ_KHÓ_TRÊN>"
+}}
+"""
+        provider = (provider or 'gemini').lower()
+        model = model or cls.PROVIDER_DEFAULT_MODELS.get(provider, 'gemini-3.7-flash')
+        
+        try:
+            raw_reply, _, _, _ = cls._call_provider_with_retry_and_fallback(
+                provider=provider,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                prompt=prompt,
+                max_tokens=150
+            )
+            raw_reply = raw_reply.strip()
+            if raw_reply.startswith("```json"):
+                raw_reply = raw_reply[7:-3]
+            elif raw_reply.startswith("```"):
+                raw_reply = raw_reply[3:-3]
+            
+            data = json.loads(raw_reply)
+            
+            comp = data.get("competency_category", "PROG_BASIC")
+            diff = data.get("difficulty_level", "TH")
+            
+            if comp not in ["PROG_BASIC", "ALGO_DS", "OPTIMIZATION", "DB_NETWORK", "ICT_APP"]:
+                comp = "PROG_BASIC"
+            if diff not in ["NB", "TH", "VD", "VDC"]:
+                diff = "TH"
+                
+            return {
+                "competency_category": comp,
+                "difficulty_level": diff
+            }
+        except Exception as e:
+            logger.error(f"Lỗi AI phân loại: {str(e)}")
+            return {
+                "competency_category": "PROG_BASIC",
+                "difficulty_level": "TH"
+            }
+
+    @classmethod
     def solve_exam(
         cls,
         questions: List[Dict[str, Any]],
