@@ -23,6 +23,8 @@ interface MatrixRowData {
   vdc_dung_sai: MatrixCell;
 }
 
+export type MatrixField = 'nb_trac_nghiem' | 'th_trac_nghiem' | 'vd_trac_nghiem' | 'vdc_trac_nghiem' | 'nb_dung_sai' | 'th_dung_sai' | 'vd_dung_sai' | 'vdc_dung_sai';
+
 export const AutoExamGenerator: React.FC = () => {
   const navigate = useNavigate();
   const [categories, setCategories] = useState<QuestionCategory[]>([]);
@@ -75,8 +77,6 @@ export const AutoExamGenerator: React.FC = () => {
     }
     setSelectedCategoryIds(newSet);
   };
-
-  type MatrixField = 'nb_trac_nghiem' | 'th_trac_nghiem' | 'vd_trac_nghiem' | 'vdc_trac_nghiem' | 'nb_dung_sai' | 'th_dung_sai' | 'vd_dung_sai' | 'vdc_dung_sai';
 
   const handleCellChange = (catId: number, field: MatrixField, value: string) => {
     const num = parseInt(value) || 0;
@@ -253,7 +253,7 @@ export const AutoExamGenerator: React.FC = () => {
                       <tr className="border-b border-slate-700/50 hover:bg-slate-800/30">
                         <td className="p-3 pl-8 text-slate-300 text-xs">↳ Trắc nghiệm</td>
                         {['nb', 'th', 'vd', 'vdc'].map(diff => {
-                          const field = `${diff}_trac_nghiem` as keyof MatrixRowData;
+                          const field = `${diff}_trac_nghiem` as MatrixField;
                           const cell = row[field] as MatrixCell;
                           const isError = cell.available !== null && cell.available < cell.quantity;
                           return (
@@ -275,7 +275,7 @@ export const AutoExamGenerator: React.FC = () => {
                       <tr className="border-b border-slate-700 hover:bg-slate-800/30">
                         <td className="p-3 pl-8 text-slate-300 text-xs">↳ Đúng/Sai</td>
                         {['nb', 'th', 'vd', 'vdc'].map(diff => {
-                          const field = `${diff}_dung_sai` as keyof MatrixRowData;
+                          const field = `${diff}_dung_sai` as MatrixField;
                           const cell = row[field] as MatrixCell;
                           const isError = cell.available !== null && cell.available < cell.quantity;
                           return (
