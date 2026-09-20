@@ -369,8 +369,13 @@ export const StudentDashboard: React.FC = () => {
                   );
                 })
                 .map((exam) => {
-                const existingSession = sessions.find((s) => s.exam === exam.id);
+                const examSessions = sessions.filter((s) => s.exam === exam.id);
+                const completedSessionsCount = examSessions.filter((s) => s.status === 'SUBMITTED' || s.status === 'LOCKED_VIOLATION').length;
+                const inProgressSession = examSessions.find((s) => s.status === 'IN_PROGRESS');
+                const lastCompletedSession = [...examSessions].filter((s) => s.status === 'SUBMITTED' || s.status === 'LOCKED_VIOLATION').sort((a,b) => b.id - a.id)[0];
+                const existingSession = inProgressSession || lastCompletedSession;
                 const isCompleted = existingSession && existingSession.status !== 'IN_PROGRESS';
+                const canRetake = isCompleted && (!exam.max_attempts || completedSessionsCount < exam.max_attempts);
 
                 const now = new Date();
                 const startTime = exam.assigned_start_time ? new Date(exam.assigned_start_time) : null;
@@ -454,13 +459,24 @@ export const StudentDashboard: React.FC = () => {
 
                     <div className="mt-5 pt-3">
                       {isCompleted ? (
-                        <button
-                          onClick={() => navigate(`/result/${existingSession.id}`)}
-                          className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 px-4 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition-all"
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                          Đã thi {existingSession.total_score !== null && existingSession.total_score !== undefined ? `(${existingSession.total_score}đ)` : ''} • Xem Kết quả
-                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => navigate(`/result/${existingSession.id}`)}
+                            className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 py-2.5 px-4 text-xs font-bold text-emerald-300 hover:bg-emerald-500/20 transition-all"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            Đã thi {existingSession.total_score !== null && existingSession.total_score !== undefined ? `(${existingSession.total_score}đ)` : ''} • Xem Kết quả
+                          </button>
+                          {canRetake && !isExpired && (
+                            <button
+                              onClick={() => handleStartExam(exam)}
+                              className="w-full flex items-center justify-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2.5 px-4 text-xs font-bold text-blue-300 hover:bg-blue-500/20 transition-all"
+                            >
+                              <span>Làm lại bài {exam.max_attempts ? `(${completedSessionsCount}/${exam.max_attempts} lượt)` : '(Không giới hạn)'}</span>
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
                       ) : isNotStarted ? (
                         <div className="w-full text-center py-2.5 px-4 rounded-xl border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300">
                           ⏳ Chưa mở thi (Đến giờ mới được vào)
@@ -481,7 +497,7 @@ export const StudentDashboard: React.FC = () => {
                           onClick={() => handleStartExam(exam)}
                           className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-2.5 px-4 text-xs font-bold text-white shadow-md shadow-blue-600/30 hover:bg-blue-500 transition-all"
                         >
-                          <span>Bắt đầu làm bài</span>
+                          <span>{inProgressSession ? 'Tiếp tục làm bài' : 'Bắt đầu làm bài'}</span>
                           <ChevronRight className="h-4 w-4" />
                         </button>
                       )}

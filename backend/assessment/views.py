@@ -60,7 +60,7 @@ class StartExamSessionView(APIView):
                 status__in=[ExamSession.Status.SUBMITTED, ExamSession.Status.LOCKED_VIOLATION]
             ).count()
 
-            if completed_count >= exam.max_attempts:
+            if exam.max_attempts > 0 and completed_count >= exam.max_attempts:
                 last_session = ExamSession.objects.filter(
                     student=student, exam=exam,
                     status__in=[ExamSession.Status.SUBMITTED, ExamSession.Status.LOCKED_VIOLATION]
