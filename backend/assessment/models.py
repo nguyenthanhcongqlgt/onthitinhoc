@@ -105,6 +105,7 @@ class StudentAnswer(models.Model):
         verbose_name = 'Câu trả lời của thí sinh'
         verbose_name_plural = 'Chi tiết Câu trả lời'
         unique_together = ('session', 'question')
+        ordering = ['question_order_index']
         indexes = [
             models.Index(fields=['session', 'question']),
         ]
