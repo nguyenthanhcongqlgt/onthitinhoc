@@ -137,6 +137,15 @@ export const TeacherDashboard: React.FC = () => {
   const [userSearch, setUserSearch] = useState<string>('');
   const [userRoleFilter, setUserRoleFilter] = useState<string>('ALL');
 
+  // Session filters and pagination
+  const [sessionSearch, setSessionSearch] = useState<string>('');
+  const [sessionClassFilter, setSessionClassFilter] = useState<string>('ALL');
+  const [sessionExamFilter, setSessionExamFilter] = useState<string>('ALL');
+  const [sessionStatusFilter, setSessionStatusFilter] = useState<string>('ALL');
+  const [sessionSortBy, setSessionSortBy] = useState<string>('newest');
+  const [sessionPage, setSessionPage] = useState<number>(1);
+  const SESSIONS_PER_PAGE = 20;
+
   const [bankCategories, setBankCategories] = useState<QuestionCategory[]>([]);
   const [bankQuestions, setBankQuestions] = useState<BankQuestion[]>([]);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -224,6 +233,9 @@ export const TeacherDashboard: React.FC = () => {
 
   // Reset bank page when filters change
   useEffect(() => { setBankPage(1); }, [bankSearch, selectedBankCategoryId, bankPartFilter, bankBranchFilter, bankDifficultyFilter, bankSortBy]);
+
+  // Reset session page when filters change
+  useEffect(() => { setSessionPage(1); }, [sessionSearch, sessionClassFilter, sessionExamFilter, sessionStatusFilter, sessionSortBy]);
 
   const handleToggleUserStatus = async (targetUser: User, newStatus: 'ACTIVE' | 'REJECTED' | 'PENDING') => {
     try {
@@ -1490,92 +1502,246 @@ export const TeacherDashboard: React.FC = () => {
         )}
 
         {/* TAB 2: LIVE SESSIONS & RESULTS */}
-        {activeTab === 'SESSIONS' && (
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <BarChart className="h-5 w-5 text-blue-400" />
-              <h3 className="text-lg font-bold text-white">
-                GIÁM SÁT KẾT QUẢ & VI PHẠM THI CỦA THÍ SINH (REAL-TIME)
-              </h3>
-            </div>
+        {activeTab === 'SESSIONS' && (() => {
+          // Unique values for dropdowns
+          const uniqueClasses = Array.from(new Set(sessions.map(s => s.student_class).filter(Boolean)));
+          const uniqueExams = Array.from(new Set(sessions.map(s => s.exam_title).filter(Boolean)));
+          const uniqueStatuses = Array.from(new Set(sessions.map(s => s.status_display).filter(Boolean)));
 
-            {sessions.length === 0 ? (
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center text-xs text-slate-500">
-                Chưa có phiên làm bài nào của học sinh.
+          // Filter
+          let filteredSessions = sessions.filter(s => {
+            if (sessionClassFilter !== 'ALL' && s.student_class !== sessionClassFilter) return false;
+            if (sessionExamFilter !== 'ALL' && s.exam_title !== sessionExamFilter) return false;
+            if (sessionStatusFilter !== 'ALL' && s.status_display !== sessionStatusFilter) return false;
+            if (sessionSearch.trim()) {
+              const q = sessionSearch.trim().toLowerCase();
+              return (s.student_name?.toLowerCase().includes(q) || s.student_class?.toLowerCase().includes(q));
+            }
+            return true;
+          });
+
+          // Sort
+          filteredSessions.sort((a, b) => {
+            if (sessionSortBy === 'newest') {
+              return new Date(b.start_time || 0).getTime() - new Date(a.start_time || 0).getTime();
+            }
+            if (sessionSortBy === 'oldest') {
+              return new Date(a.start_time || 0).getTime() - new Date(b.start_time || 0).getTime();
+            }
+            if (sessionSortBy === 'score_desc') return b.total_score - a.total_score;
+            if (sessionSortBy === 'score_asc') return a.total_score - b.total_score;
+            if (sessionSortBy === 'violations_desc') return b.violation_count - a.violation_count;
+            return 0;
+          });
+
+          // Paginate
+          const totalSessionPages = Math.ceil(filteredSessions.length / SESSIONS_PER_PAGE) || 1;
+          const paginatedSessions = filteredSessions.slice(
+            (sessionPage - 1) * SESSIONS_PER_PAGE,
+            sessionPage * SESSIONS_PER_PAGE
+          );
+
+          const handleExportExcel = () => {
+            const header = ['Học sinh', 'Lớp', 'Đề thi', 'Nhánh P2', 'Điểm P1', 'Điểm P2', 'Tổng điểm', 'Cảnh báo vi phạm', 'Trạng thái', 'Thời gian bắt đầu', 'Thời gian nộp bài'];
+            const csvRows = [header.join(',')];
+            
+            for (const s of filteredSessions) {
+              const row = [
+                '"' + s.student_name + '"',
+                '"' + (s.student_class || '') + '"',
+                '"' + s.exam_title + '"',
+                s.selected_branch,
+                s.part1_score,
+                s.part2_score,
+                s.total_score,
+                s.violation_count,
+                '"' + s.status_display + '"',
+                '"' + (s.start_time ? new Date(s.start_time).toLocaleString('vi-VN') : '') + '"',
+                '"' + (s.submit_time ? new Date(s.submit_time).toLocaleString('vi-VN') : '') + '"'
+              ];
+              csvRows.push(row.join(','));
+            }
+
+            const csvContent = "\uFEFF" + csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Lich_su_bai_thi_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+
+          return (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <BarChart className="h-5 w-5 text-blue-400" />
+                  <h3 className="text-lg font-bold text-white uppercase">
+                    Lịch sử bài thi & Giám sát kết quả
+                  </h3>
+                </div>
+                
+                <button
+                  onClick={handleExportExcel}
+                  className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 transition-all"
+                  title="Xuất danh sách đã lọc ra Excel (CSV)"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Xuất Excel</span>
+                </button>
               </div>
-            ) : (
-              <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
-                      <tr>
-                        <th className="px-5 py-3.5">Học sinh / SBD</th>
-                        <th className="px-4 py-3.5">Lớp</th>
-                        <th className="px-4 py-3.5">Đề thi</th>
-                        <th className="px-4 py-3.5">Nhánh P2</th>
-                        <th className="px-4 py-3.5">Điểm P1</th>
-                        <th className="px-4 py-3.5">Điểm P2</th>
-                        <th className="px-4 py-3.5">Tổng điểm</th>
-                        <th className="px-4 py-3.5">Cảnh báo Vi phạm</th>
-                        <th className="px-4 py-3.5">Trạng thái</th>
-                        <th className="px-5 py-3.5 text-right">Chi tiết</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {sessions.map((s) => (
-                        <tr key={s.id} className="hover:bg-slate-900/50 transition-colors">
-                          <td className="px-5 py-4 font-semibold text-white">
-                            {s.student_name}
-                          </td>
-                          <td className="px-4 py-4 font-medium text-slate-400">{s.student_class || '12A1'}</td>
-                          <td className="px-4 py-4 max-w-xs truncate text-slate-200">{s.exam_title}</td>
-                          <td className="px-4 py-4">
-                            <span className="inline-flex rounded-md bg-indigo-500/20 px-2 py-0.5 font-mono text-[11px] font-bold text-indigo-300">
-                              {s.selected_branch}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 font-mono">{s.part1_score}đ</td>
-                          <td className="px-4 py-4 font-mono">{s.part2_score}đ</td>
-                          <td className="px-4 py-4 font-mono text-sm font-bold text-blue-400">{s.total_score}đ</td>
-                          <td className="px-4 py-4 font-mono">
-                            {s.violation_count > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-red-400 font-bold">
-                                <AlertTriangle className="h-3 w-3" /> {s.violation_count} lần
-                              </span>
-                            ) : (
-                              <span className="text-slate-500">0</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-4">
-                            <span
-                              className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold ${
-                                s.status === 'SUBMITTED'
-                                  ? 'bg-emerald-500/20 text-emerald-300'
-                                  : s.status === 'LOCKED_VIOLATION'
-                                  ? 'bg-red-500/20 text-red-300'
-                                  : 'bg-amber-500/20 text-amber-300'
-                              }`}
-                            >
-                              {s.status_display}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 text-right">
-                            <button
-                              onClick={() => navigate(`/result/${s.id}`)}
-                              className="inline-flex items-center gap-1 rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all"
-                            >
-                              <Eye className="h-3.5 w-3.5" /> Báo cáo
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {/* Filter Bar */}
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-3 space-y-3 shadow-md">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1 min-w-[200px]">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={sessionSearch}
+                      onChange={(e) => setSessionSearch(e.target.value)}
+                      placeholder="Tìm tên học sinh, lớp..."
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900 pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+                  
+                  <select
+                    value={sessionClassFilter}
+                    onChange={(e) => setSessionClassFilter(e.target.value)}
+                    className="rounded-xl border border-slate-700 bg-slate-900 text-xs text-slate-300 px-3 py-1.5 focus:border-blue-500 focus:outline-none cursor-pointer max-w-[150px]"
+                  >
+                    <option value="ALL">Tất cả Lớp</option>
+                    {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+
+                  <select
+                    value={sessionExamFilter}
+                    onChange={(e) => setSessionExamFilter(e.target.value)}
+                    className="rounded-xl border border-slate-700 bg-slate-900 text-xs text-slate-300 px-3 py-1.5 focus:border-blue-500 focus:outline-none cursor-pointer max-w-[200px]"
+                  >
+                    <option value="ALL">Tất cả Đề thi</option>
+                    {uniqueExams.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+
+                  <select
+                    value={sessionStatusFilter}
+                    onChange={(e) => setSessionStatusFilter(e.target.value)}
+                    className="rounded-xl border border-slate-700 bg-slate-900 text-xs text-slate-300 px-3 py-1.5 focus:border-blue-500 focus:outline-none cursor-pointer max-w-[150px]"
+                  >
+                    <option value="ALL">Tất cả Trạng thái</option>
+                    {uniqueStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+
+                  <select
+                    value={sessionSortBy}
+                    onChange={(e) => setSessionSortBy(e.target.value)}
+                    className="rounded-xl border border-slate-700 bg-slate-900 text-xs text-slate-300 px-3 py-1.5 focus:border-blue-500 focus:outline-none cursor-pointer"
+                  >
+                    <option value="newest">Mới nhất</option>
+                    <option value="oldest">Cũ nhất</option>
+                    <option value="score_desc">Tổng điểm (Cao - Thấp)</option>
+                    <option value="score_asc">Tổng điểm (Thấp - Cao)</option>
+                    <option value="violations_desc">Vi phạm nhiều nhất</option>
+                  </select>
                 </div>
               </div>
-            )}
-          </section>
-        )}
+
+              {paginatedSessions.length === 0 ? (
+                <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-6 text-center text-xs text-slate-500">
+                  Không tìm thấy phiên làm bài nào phù hợp.
+                </div>
+              ) : (
+                <>
+                <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 shadow-xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="border-b border-slate-800 bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400">
+                        <tr>
+                          <th className="px-5 py-3.5">Học sinh / SBD</th>
+                          <th className="px-4 py-3.5">Lớp</th>
+                          <th className="px-4 py-3.5">Đề thi</th>
+                          <th className="px-4 py-3.5">Thời gian</th>
+                          <th className="px-4 py-3.5">Nhánh P2</th>
+                          <th className="px-4 py-3.5">Điểm P1</th>
+                          <th className="px-4 py-3.5">Điểm P2</th>
+                          <th className="px-4 py-3.5 cursor-pointer hover:text-blue-400" onClick={() => setSessionSortBy(sessionSortBy === 'score_desc' ? 'score_asc' : 'score_desc')}>Tổng điểm ↕</th>
+                          <th className="px-4 py-3.5 cursor-pointer hover:text-red-400" onClick={() => setSessionSortBy('violations_desc')}>Cảnh báo ↕</th>
+                          <th className="px-4 py-3.5">Trạng thái</th>
+                          <th className="px-5 py-3.5 text-right">Chi tiết</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60">
+                        {paginatedSessions.map((s) => (
+                          <tr key={s.id} className="hover:bg-slate-900/50 transition-colors">
+                            <td className="px-5 py-4 font-semibold text-white">
+                              {s.student_name}
+                            </td>
+                            <td className="px-4 py-4 font-medium text-slate-400">{s.student_class || '12A1'}</td>
+                            <td className="px-4 py-4 max-w-xs truncate text-slate-200" title={s.exam_title}>{s.exam_title}</td>
+                            <td className="px-4 py-4 text-[10px] text-slate-400">
+                              <div>Bắt đầu: {s.start_time ? new Date(s.start_time).toLocaleString('vi-VN') : ''}</div>
+                              {s.submit_time && <div className="text-slate-500">Nộp: {new Date(s.submit_time).toLocaleString('vi-VN')}</div>}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className="inline-flex rounded-md bg-indigo-500/20 px-2 py-0.5 font-mono text-[11px] font-bold text-indigo-300">
+                                {s.selected_branch}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 font-mono">{s.part1_score}đ</td>
+                            <td className="px-4 py-4 font-mono">{s.part2_score}đ</td>
+                            <td className="px-4 py-4 font-mono text-sm font-bold text-blue-400">{s.total_score}đ</td>
+                            <td className="px-4 py-4 font-mono">
+                              {s.violation_count > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-red-400 font-bold">
+                                  <AlertTriangle className="h-3 w-3" /> {s.violation_count} lần
+                                </span>
+                              ) : (
+                                <span className="text-slate-500">0</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-4">
+                              <span
+                                className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-bold ${
+                                  s.status === 'SUBMITTED'
+                                    ? 'bg-emerald-500/20 text-emerald-300'
+                                    : s.status === 'LOCKED_VIOLATION'
+                                    ? 'bg-red-500/20 text-red-300'
+                                    : 'bg-amber-500/20 text-amber-300'
+                                }`}
+                              >
+                                {s.status_display}
+                              </span>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <button
+                                onClick={() => navigate(`/result/${s.id}`)}
+                                className="inline-flex items-center gap-1 rounded-lg bg-blue-600/20 px-3 py-1.5 text-xs font-bold text-blue-400 hover:bg-blue-600 hover:text-white transition-all"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Báo cáo
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                
+                <PaginationBar
+                  currentPage={sessionPage}
+                  totalPages={totalSessionPages}
+                  totalItems={filteredSessions.length}
+                  itemsPerPage={SESSIONS_PER_PAGE}
+                  onPageChange={setSessionPage}
+                  label="lượt thi"
+                />
+                </>
+              )}
+            </section>
+          );
+        })()}
 
         {/* TAB: CLASSROOM MANAGEMENT */}
         {activeTab === 'CLASSES' && (
