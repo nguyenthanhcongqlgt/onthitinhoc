@@ -191,7 +191,7 @@ export const ExamResult: React.FC = () => {
                   <span className="font-mono text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">
                     {session.total_score}
                   </span>
-                  <span className="text-sm font-semibold text-slate-400">/ {session.exam_total_points || '20.00'} điểm</span>
+                  <span className="text-sm font-semibold text-slate-400">/ {session.exam_total_points ?? '20.00'} điểm</span>
                 </div>
                 <p className="text-xs text-slate-400">
                   Trạng thái: <strong className="text-slate-200">{session.status_display}</strong>
@@ -205,7 +205,7 @@ export const ExamResult: React.FC = () => {
                     Phần I: Trắc nghiệm
                   </div>
                   <div className="font-mono text-2xl font-bold text-white">
-                    {session.part1_score} <span className="text-sm text-slate-400 font-normal">/ {session.exam_part1_total_points || '12.00'}đ</span>
+                    {session.part1_score} <span className="text-sm text-slate-400 font-normal">/ {session.exam_part1_total_points ?? '12.00'}đ</span>
                   </div>
                   <div className="text-xs text-slate-400 mt-1">
                     Đúng {session.part1_correct_count} câu
@@ -217,7 +217,7 @@ export const ExamResult: React.FC = () => {
                     Phần II: Đúng / Sai ({session.selected_branch === 'BOTH' ? 'Cả CS & ICT' : session.selected_branch})
                   </div>
                   <div className="font-mono text-2xl font-bold text-white">
-                    {session.part2_score} <span className="text-sm text-slate-400 font-normal">/ {session.exam_part2_total_points || '8.00'}đ</span>
+                    {session.part2_score} <span className="text-sm text-slate-400 font-normal">/ {session.exam_part2_total_points ?? '8.00'}đ</span>
                   </div>
                   <div className="text-xs text-slate-400 mt-1">
                     Đúng {session.part2_correct_subitems_count} ý

@@ -792,6 +792,24 @@ class ImportDocxExamView(APIView):
         tp_val = request.data.get('total_points')
         total_points = float(tp_val) if tp_val not in [None, ''] else float(exam_meta.get('total_points', round(part1_total_points + part2_total_points, 2)))
 
+        # Automatically adjust points if there are no Part II questions in the payload
+        questions_payload = request.data.get('questions')
+        if isinstance(questions_payload, list) and len(questions_payload) > 0:
+            final_questions_check = questions_payload
+        else:
+            final_questions_check = parsed_data.get('questions', [])
+
+        has_part1 = any(q.get('part_type') == 'PART_I' for q in final_questions_check)
+        has_part2 = any(q.get('part_type') == 'PART_II' for q in final_questions_check)
+        
+        if not has_part1:
+            part1_total_points = 0.0
+        if not has_part2:
+            part2_total_points = 0.0
+            
+        if not has_part1 or not has_part2:
+            total_points = round(part1_total_points + part2_total_points, 2)
+
         folder_id = request.data.get('folder_id') or request.data.get('folder')
         target_folder = None
         if folder_id:

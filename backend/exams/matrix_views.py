@@ -75,16 +75,24 @@ class GenerateExamFromMatrixView(APIView):
         if errors:
             return Response({'success': False, 'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        exam = Exam.objects.create(
-            title=test_config.get('name', 'Đề thi tự sinh từ Ma Trận'),
-            duration_minutes=test_config.get('total_time_minutes', 45),
-            total_points=test_config.get('total_score', 10.0),
-            creator=request.user
-        )
-
         bank_qs = BankQuestion.objects.filter(id__in=selected_questions)
         bank_q_map = {q.id: q for q in bank_qs}
 
+        has_part1 = any(q.part_type == 'PART_I' for q in bank_qs)
+        has_part2 = any(q.part_type == 'PART_II' for q in bank_qs)
+        
+        total_score_val = float(test_config.get('total_score', 10.0))
+        p1_pts = total_score_val if has_part1 and not has_part2 else (total_score_val * 0.6 if has_part1 else 0.0)
+        p2_pts = total_score_val if has_part2 and not has_part1 else (total_score_val * 0.4 if has_part2 else 0.0)
+
+        exam = Exam.objects.create(
+            title=test_config.get('name', 'Đề thi tự sinh từ Ma Trận'),
+            duration_minutes=test_config.get('total_time_minutes', 45),
+            total_points=total_score_val,
+            part1_total_points=p1_pts,
+            part2_total_points=p2_pts,
+            creator=request.user
+        )
         order = 1
         for q_id in selected_questions:
             bq = bank_q_map[q_id]
